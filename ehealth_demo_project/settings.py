@@ -4,6 +4,8 @@ import os
 # Define BASE_DIR at the top
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+LOGIN_URL = '/accounts/login/'
+
 # Media settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
