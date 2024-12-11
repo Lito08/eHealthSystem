@@ -26,7 +26,13 @@ class ResidentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if user:  # Initialize matric_id dynamically based on account type
-            self.fields['matric_id'].initial = self.generate_matric_id(user.account_type)
+            # If the user has a corresponding Resident, get account type from there
+            try:
+                resident = user.resident
+                self.fields['matric_id'].initial = self.generate_matric_id(resident.account_type)
+            except Resident.DoesNotExist:
+                # Handle case where user doesn't have a resident profile (fallback)
+                self.fields['matric_id'].initial = self.generate_matric_id('STU')  # Default to 'STU'
 
         # Dynamically update the room_number queryset based on block and level
         self.fields['room_number'].queryset = self.get_available_rooms()

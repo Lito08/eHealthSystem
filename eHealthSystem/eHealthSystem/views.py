@@ -32,12 +32,12 @@ def create_resident(request):
                 block = Block.objects.get(id=block_id)  # Retrieve the actual Block instance
                 level = Level.objects.get(id=level_id)  # Retrieve the actual Level instance
 
-                # Get the matric_id from the form
+                # Get the matric_id from the form (it may be dynamically generated)
                 matric_id = form.cleaned_data['matric_id']
 
                 # Ensure matric_id is unique
                 while User.objects.filter(matric_id=matric_id).exists():
-                    matric_id = f"A24DW{str(int(matric_id[5:]) + 1).zfill(4)}"
+                    matric_id = f"A24DW{str(int(matric_id[5:]) + 1).zfill(4)}"  # Increment matric_id if it already exists
 
                 # Generate a random password for the new user
                 password = generate_random_password()
