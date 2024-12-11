@@ -109,6 +109,15 @@
                     }
                 });
             });
+
+            // Prevent form submission if room number is not selected
+            $('form').submit(function(event) {
+                var roomNumber = $('#id_room_number').val();
+                if (!roomNumber) {
+                    alert('Please select a valid room.');
+                    event.preventDefault();  // Prevent form submission
+                }
+            });
         });
     </script>
 </body>

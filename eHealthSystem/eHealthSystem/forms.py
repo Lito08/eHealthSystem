@@ -15,7 +15,7 @@ class ResidentForm(forms.ModelForm):
     last_name = forms.CharField(max_length=30, label="Last Name")
     block = forms.ModelChoiceField(queryset=Block.objects.all(), label="Block")
     level = forms.ModelChoiceField(queryset=Level.objects.all(), label="Level")
-    room_number = forms.ModelChoiceField(queryset=Room.objects.all(), label="Room Number")
+    room_number = forms.ModelChoiceField(queryset=Room.objects.none(), label="Room Number")
 
     class Meta:
         model = Resident
@@ -33,9 +33,6 @@ class ResidentForm(forms.ModelForm):
             except Resident.DoesNotExist:
                 # Handle case where user doesn't have a resident profile (fallback)
                 self.fields['matric_id'].initial = self.generate_matric_id('STU')  # Default to 'STU'
-
-        # Dynamically update the room_number queryset based on block and level
-        self.fields['room_number'].queryset = self.get_available_rooms()
 
     @staticmethod
     def generate_matric_id(account_type):
@@ -69,16 +66,9 @@ class ResidentForm(forms.ModelForm):
         # Dynamically update room_number choices based on block and level
         if block and level:
             self.fields['room_number'].queryset = Room.objects.filter(block=block, level=level)
-        
+
         # Ensure matric_id is updated based on the account type
         if account_type:
             self.update_matric_id(account_type)
 
         return cleaned_data
-
-    def get_available_rooms(self):
-        """
-        Fetch available rooms based on block and level.
-        """
-        # Default queryset that will be dynamically updated in clean()
-        return Room.objects.none()

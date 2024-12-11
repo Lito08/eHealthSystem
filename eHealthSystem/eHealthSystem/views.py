@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from .forms import ResidentForm
-from .models import Resident, User, Room, Block, Level  # Import Block and Level here
+from .models import Resident, User, Room, Block, Level
 from .utils import generate_matric_id
 import random
 import string
@@ -27,10 +27,12 @@ def create_resident(request):
                 # Get the block and level selections
                 block_id = form.cleaned_data['block']
                 level_id = form.cleaned_data['level']
+                room_id = form.cleaned_data['room_number']  # Get the room number from the form
 
                 # Ensure that the selected block and level exist in the database
                 block = Block.objects.get(id=block_id)  # Retrieve the actual Block instance
                 level = Level.objects.get(id=level_id)  # Retrieve the actual Level instance
+                room = Room.objects.get(id=room_id, block=block, level=level)  # Retrieve the Room instance
 
                 # Get the matric_id from the form (it may be dynamically generated)
                 matric_id = form.cleaned_data['matric_id']
@@ -57,20 +59,25 @@ def create_resident(request):
                 resident.user = user  # Associate the Resident with the User
                 resident.block = block  # Assign the Block instance to the Resident
                 resident.level = level  # Assign the Level instance to the Resident
-                resident.save()  # Save the Resident object, which contains the account_type
+                resident.room = room  # Assign the Room instance to the Resident
+                resident.save()  # Save the Resident object
 
                 # Redirect to the home page after successful creation
                 return redirect('home')
+
             except Block.DoesNotExist:
                 form.add_error('block', "The selected block does not exist.")
             except Level.DoesNotExist:
                 form.add_error('level', "The selected level does not exist.")
+            except Room.DoesNotExist:
+                form.add_error('room_number', "The selected room does not exist or does not belong to the selected block and level.")
             except Exception as e:
                 # Log the error and show an error message in case something fails
                 print(f"Error: {e}")
                 form.add_error(None, "There was an error creating the resident. Please try again.")
         else:
             print("Form is not valid. Errors:", form.errors)
+
     else:
         form = ResidentForm(user=request.user)  # Pass the current user to the form
 
