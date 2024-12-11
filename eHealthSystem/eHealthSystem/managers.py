@@ -5,7 +5,9 @@ from django.utils.translation import gettext_lazy as _
 
 class UserManager(DefaultUserManager):
     def generate_random_password(self, length=8):
-        """Generate a random password."""
+        """
+        Generate a random password of specified length.
+        """
         characters = string.ascii_letters + string.digits + string.punctuation
         return ''.join(random.choice(characters) for _ in range(length))
 
@@ -16,42 +18,40 @@ class UserManager(DefaultUserManager):
         if not matric_id:
             raise ValueError(_('The Matric ID must be set'))
 
-        if not password:
-            password = self.generate_random_password()  # Generate random password if not provided
+        # Generate a random password if not provided
+        password = password or self.generate_random_password()
 
-        # Create the user with matric_id and extra fields
+        # Create the user
         user = self.model(matric_id=matric_id, **extra_fields)
         user.set_password(password)  # Hash the password
         user.save(using=self._db)
 
-        # Import Resident models here to avoid circular import
-        from .models import Resident  # Import here to avoid circular import
-        resident = Resident.objects.create(
+        # Create and associate a Resident object
+        from .models import Resident  # Import locally to avoid circular dependencies
+        Resident.objects.create(
             user=user,
             account_type=account_type,
-            block=block,  # Ensure a value for block is passed
-            level=level,  # Ensure a value for level is passed
-            room_number=room_number  # Ensure a value for room_number is passed
+            block=block,
+            level=level,
+            room_number=room_number
         )
 
         return user
 
     def create_superuser(self, matric_id, password=None, **extra_fields):
         """
-        Create and return a superuser (admin), without any associated Resident attributes.
+        Create and return a superuser (admin) without an associated Resident.
         """
         if not matric_id:
-            raise ValueError(_('Superuser must have a matric ID'))
+            raise ValueError(_('The Matric ID must be set for a superuser'))
 
+        # Set default values for a superuser
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('account_type', 'STA')  # Set the account type to STAFF for superuser
-        extra_fields.setdefault('block', None)  # No block for superuser
-        extra_fields.setdefault('level', None)  # No level for superuser
-        extra_fields.setdefault('room_number', None)  # No room number for superuser
 
-        # Only pass matric_id, password, and extra_fields to create_user
-        user = self.create_user(matric_id=matric_id, password=password, **extra_fields)
-
-        # Return the created superuser
-        return user
+        # Create the superuser
+        return self.model.objects.create_user(
+            matric_id=matric_id,
+            password=password or self.generate_random_password(),  # Generate a random password if not provided
+            **extra_fields
+        )

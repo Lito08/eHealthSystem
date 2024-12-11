@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from eHealthSystem.models import Block, Level, Room  # Import Block, Level, and Room models
+from eHealthSystem.models import Block, Level, Room, Resident  # Import models
 import random
 import string
 
@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help = 'Create a superuser automatically if not exists, or delete and recreate if it does.'
 
     def add_arguments(self, parser):
-        # Add an argument for matric_id to make it dynamic (optional, you can pass it when running the command)
+        # Add arguments for matric_id and password
         parser.add_argument(
             '--matric_id',
             type=str,
@@ -23,8 +23,8 @@ class Command(BaseCommand):
         )
 
     def generate_random_matric_id(self):
-        """Generate a random matric ID if you don't want the default"""
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        """Generate a random matric ID if 'random' is chosen."""
+        return f"A24DW{str(random.randint(1, 9999)).zfill(4)}"  # Random matric ID format A24DW####
 
     def handle(self, *args, **options):
         User = get_user_model()
@@ -33,11 +33,12 @@ class Command(BaseCommand):
 
         # Generate random matric_id if needed
         if matric_id == 'random':
-            matric_id = f"A24DW{str(random.randint(1, 9999)).zfill(4)}"  # Random matric ID format A24DW####
+            matric_id = self.generate_random_matric_id()
 
         # Define superuser credentials
         superuser_credentials = {
             'matric_id': matric_id,
+            'username': matric_id,  # Ensure the username is the same as matric_id
             'password': password,
             'first_name': 'Admin',
             'last_name': 'Superuser',
@@ -68,12 +69,13 @@ class Command(BaseCommand):
 
             # If Resident is required, create the Resident with default values for block, level, and room
             if default_block and default_level and default_room:
-                from eHealthSystem.models import Resident  # Import Resident model inside to avoid circular imports
+                # Create Resident associated with the superuser
                 resident_credentials = {
                     'user': user,
                     'block': default_block,
                     'level': default_level,
                     'room_number': default_room,
+                    'account_type': 'STA',  # Staff/Admin type
                 }
                 Resident.objects.create(**resident_credentials)
                 self.stdout.write(self.style.SUCCESS(f"Resident created for superuser {superuser_credentials['matric_id']}."))
