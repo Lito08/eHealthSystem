@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Infected Lecturer</title>
+</head>
+<body>
+    <h1>Add Infected Lecturer</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add</button>
+    </form>
+    <br>
+    <a href="{% url 'view_infected_lecturers' %}">Back to Infected Lecturers</a>
+</body>
+</html>
