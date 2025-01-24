@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}eHealth System{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>Welcome to eHealth System</h1>
+        <nav>
+            <a href="{% url 'book_appointment' %}">Book Appointment</a>
+            <a href="{% url 'appointment_list' %}">My Appointments</a>
+        </nav>
+    </header>
+
+    <div class="content">
+        {% block content %}
+        <!-- Content from child templates goes here -->
+        {% endblock %}
+    </div>
+
+    <footer>
+        <p>&copy; 2025 eHealth System</p>
+    </footer>
+</body>
+</html>

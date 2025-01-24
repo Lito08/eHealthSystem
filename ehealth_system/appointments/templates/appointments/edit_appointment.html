@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Edit Appointment</h2>
+  <form method="post">
+    {% csrf_token %}
+    <label for="appointment_date">New Date:</label>
+    <input type="datetime-local" name="appointment_date" value="{{ appointment.appointment_date|date:'Y-m-d\TH:i' }}" required>
+
+    <label for="reason">Reason:</label>
+    <textarea name="reason">{{ appointment.reason }}</textarea>
+
+    <button type="submit">Update</button>
+  </form>
+{% endblock %}

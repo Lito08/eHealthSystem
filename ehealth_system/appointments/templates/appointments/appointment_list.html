@@ -5,6 +5,8 @@
     {% for appointment in appointments %}
       <li>
         {{ appointment.clinic.name }} - {{ appointment.appointment_date }} ({{ appointment.status }})
+        <a href="{% url 'edit_appointment' appointment.id %}">Edit</a> |
+        <a href="{% url 'cancel_appointment' appointment.id %}">Cancel</a>
       </li>
     {% endfor %}
   </ul>
