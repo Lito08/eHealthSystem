@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>My Appointments</h2>
+  <ul>
+    {% for appointment in appointments %}
+      <li>
+        {{ appointment.clinic.name }} - {{ appointment.appointment_date }} at {{ appointment.appointment_time }} ({{ appointment.status }})
+        <a href="{% url 'edit_appointment' appointment.appointment_id %}">Edit</a> |
+        <a href="{% url 'cancel_appointment' appointment.appointment_id %}">Cancel</a>
+        {% if appointment.status == "Scheduled" %}
+          | <a href="{% url 'confirm_appointment' appointment.appointment_id %}">Confirm</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

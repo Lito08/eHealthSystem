@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Book an Appointment</h2>
+  <form method="post">
+    {% csrf_token %}
+    
+    <label>Clinic:</label>
+    {% if clinic %}
+      <input type="text" value="{{ clinic.name }}" readonly>
+    {% else %}
+      <p>No clinic available.</p>
+    {% endif %}
+
+    <label for="appointment_date">Select Date:</label>
+    <input type="date" name="appointment_date" required>
+
+    <label for="appointment_time">Select Time:</label>
+    <input type="time" name="appointment_time" required>
+
+    <label for="reason">Reason:</label>
+    <textarea name="reason" required></textarea>
+
+    <button type="submit">Book Appointment</button>
+  </form>
+{% endblock %}
