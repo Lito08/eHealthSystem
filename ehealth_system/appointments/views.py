@@ -6,12 +6,16 @@ from django.utils.crypto import get_random_string
 
 @login_required
 def book_appointment(request):
+    clinic = Clinic.objects.first()  # Fetch the first clinic available
+
+    if not clinic:
+        messages.error(request, "No clinic available. Please contact admin.")
+        return redirect('appointment_list')
+
     if request.method == 'POST':
         appointment_date = request.POST['appointment_date']
         appointment_time = request.POST['appointment_time']
         reason = request.POST['reason']
-
-        clinic = Clinic.objects.first()
 
         Appointment.objects.create(
             appointment_id="APPT" + str(Appointment.objects.count() + 1),
@@ -24,7 +28,8 @@ def book_appointment(request):
         messages.success(request, "Appointment booked successfully.")
         return redirect('appointment_list')
 
-    return render(request, 'appointments/book_appointment.html')
+    return render(request, 'appointments/book_appointment.html', {'clinic': clinic})
+
 
 @login_required
 def appointment_list(request):
