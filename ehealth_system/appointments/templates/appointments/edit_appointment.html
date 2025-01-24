@@ -4,7 +4,10 @@
   <form method="post">
     {% csrf_token %}
     <label for="appointment_date">New Date:</label>
-    <input type="datetime-local" name="appointment_date" value="{{ appointment.appointment_date|date:'Y-m-d\TH:i' }}" required>
+    <input type="date" name="appointment_date" value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
+
+    <label for="appointment_time">New Time:</label>
+    <input type="time" name="appointment_time" value="{{ appointment.appointment_time }}" required>
 
     <label for="reason">Reason:</label>
     <textarea name="reason">{{ appointment.reason }}</textarea>
