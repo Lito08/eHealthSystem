@@ -1,0 +1,19 @@
+<h1>Report Health Risk</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ resident_form.as_p }}  <!-- Name, ID, Resident Type -->
+    {{ health_form.as_p }}    <!-- Status -->
+
+    <h2>COVID-19 Symptoms Reference</h2>
+    <p>The following list does not include all possible symptoms.<br>
+        Symptoms may change with new COVID-19 variants and can vary <br>
+        depending on vaccination status. Possible symptoms include:</p>
+    <ul>
+        {% for symptom in symptoms_list %}
+        <li>{{ symptom }}</li>
+        {% endfor %}
+    </ul>
+
+    <button type="submit">Submit</button>
+    <button type="button" onclick="window.history.back();">No</button>
+</form>

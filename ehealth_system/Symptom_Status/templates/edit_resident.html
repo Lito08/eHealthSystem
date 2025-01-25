@@ -1,0 +1,10 @@
+<h1>Edit Resident</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Render the ResidentForm fields -->
+    {{ health_form.as_p }}  <!-- Render the HealthStatusForm fields -->
+    <button type="submit">Save Changes</button>
+    <a href="{% url 'health_status' %}">
+        <button type="button">Cancel</button>
+    </a>
+</form>

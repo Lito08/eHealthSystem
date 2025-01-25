@@ -1,0 +1,21 @@
+<h1>Quarantine Room Management</h1>
+<table border="1">
+    <tr>
+        <th>Room Number</th>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Resident Type</th>  <!-- New column for Resident Type -->
+        <th>Start Date</th>
+        <th>End Date</th>
+    </tr>
+    {% for room in rooms %}
+    <tr>
+        <td>{{ room.room_number }}</td>
+        <td>{{ room.resident.resident_id }}</td>  <!-- Access resident_id through Resident -->
+        <td>{{ room.resident.name }}</td>
+        <td>{{ room.resident.resident_type }}</td>  <!-- Access resident_type through Resident -->
+        <td>{{ room.start_date }}</td>
+        <td>{{ room.end_date }}</td>
+    </tr>
+    {% endfor %}
+</table>
