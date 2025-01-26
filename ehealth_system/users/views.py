@@ -8,11 +8,18 @@ CustomUser = get_user_model()
 
 @login_required
 def dashboard(request):
+    # Ensure only superadmins and admins can access
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to access this page.")
+        return redirect('home')
+    
     return render(request, 'dashboard.html')
 
 @login_required
 def create_user(request):
-    if request.user.role != 'superadmin':  # Ensure only superadmins can create users
+    print(f"User role: {request.user.role}")  # Debugging print to verify role in terminal
+
+    if request.user.role not in ['superadmin', 'admin']:
         messages.error(request, "You are not authorized to create users.")
         return redirect('dashboard')
 
@@ -27,9 +34,10 @@ def create_user(request):
 
     return render(request, 'users/create_user.html', {'form': form})
 
+
 @login_required
 def user_list(request):
-    if request.user.role != 'superadmin':  
+    if request.user.role not in ['superadmin', 'admin']:  
         messages.error(request, "You are not authorized to view users.")
         return redirect('dashboard')
 
