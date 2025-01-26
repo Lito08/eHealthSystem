@@ -1,13 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <div class="container">
-      <h2 class="text-center">Login</h2>
-      <form method="post">
-          {% csrf_token %}
-          {{ form.as_p }}
-          <button type="submit" class="btn btn-primary w-100">Login</button>
-      </form>
-      <p class="text-center mt-3">Contact your admin to create an account.</p>
-  </div>
+  <h2 class="text-center">Login</h2>
+  <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+          <label for="matric_id" class="form-label">Matric ID</label>
+          <input type="text" class="form-control" name="matric_id" required>
+      </div>
+      <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Login</button>
+  </form>
 {% endblock %}

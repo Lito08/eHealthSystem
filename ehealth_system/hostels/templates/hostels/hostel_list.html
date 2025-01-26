@@ -7,7 +7,9 @@
     {% for hostel in hostels %}
         <li class="list-group-item">
             <strong>{{ hostel.name }}</strong> - {{ hostel.block }}
-            <a href="{% url 'room_list' hostel_id=hostel.id %}" class="btn btn-info btn-sm float-end">View Rooms</a>
+            <a href="{% url 'room_list' hostel_id=hostel.id %}" class="btn btn-info btn-sm">View Rooms</a>
+            <a href="{% url 'edit_hostel' hostel.id %}" class="btn btn-warning btn-sm">Edit</a>
+            <a href="{% url 'delete_hostel' hostel.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
         </li>
     {% empty %}
         <li class="list-group-item text-muted">No hostels available.</li>

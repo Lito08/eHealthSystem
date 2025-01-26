@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-4">
+      <h2 class="mb-4">Edit Hostel: {{ hostel.name }}</h2>
+      <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+              <label for="id_name" class="form-label">Hostel Name</label>
+              {{ form.name }}
+          </div>
+          <div class="mb-3">
+              <label for="id_block" class="form-label">Block</label>
+              {{ form.block }}
+          </div>
+          <div class="mb-3">
+              <label for="id_levels" class="form-label">Levels</label>
+              {{ form.levels }}
+          </div>
+          <div class="mb-3">
+              <label for="id_rooms_per_level" class="form-label">Rooms per Level</label>
+              {{ form.rooms_per_level }}
+          </div>
+          <button type="submit" class="btn btn-primary">Update Hostel</button>
+      </form>
+      <a href="{% url 'hostel_list' %}" class="btn btn-secondary mt-3">Back to List</a>
+  </div>
+{% endblock %}

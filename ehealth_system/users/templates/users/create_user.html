@@ -1,12 +1,42 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <div class="container">
-      <h2 class="text-center">Create User Account</h2>
-      <form method="post" class="needs-validation">
-          {% csrf_token %}
-          {{ form.as_p }}
-          <button type="submit" class="btn btn-primary w-100">Create Account</button>
-      </form>
-  </div>
+  <h2>Create User</h2>
+  <form method="post" id="userForm">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Create User</button>
+  </form>
+
+  <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Back to User List</a>
+
+  <script>
+      document.addEventListener("DOMContentLoaded", function () {
+          var roleSelect = document.getElementById('id_role');
+          var matricField = document.getElementById('id_matric_id');
+          var emailField = document.getElementById('id_email');
+          
+          function updateMatricIDAndEmail() {
+              var role = roleSelect.value;
+              var prefixMapping = {
+                  'admin': 'A',
+                  'staff': 'UC',
+                  'lecturer': 'L',
+                  'student': 'S'
+              };
+              var prefix = prefixMapping[role] || 'S';
+
+              fetch(`/users/generate-matric-id/?role=` + role)
+                  .then(response => response.json())
+                  .then(data => {
+                      var generatedMatricID = prefix + data.matric_id;
+                      matricField.value = generatedMatricID;
+                      emailField.value = generatedMatricID + '@' + role + '.mmu.edu.my';
+                  })
+                  .catch(error => console.error('Error fetching matric ID:', error));
+          }
+
+          roleSelect.addEventListener('change', updateMatricIDAndEmail);
+      });
+  </script>
 {% endblock %}
