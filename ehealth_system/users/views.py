@@ -6,6 +6,8 @@ from django.contrib import messages
 from .forms import UserRegistrationForm
 from django.http import JsonResponse
 from hostels.models import Room
+from .models import CustomUser
+from datetime import datetime
 
 CustomUser = get_user_model()
 
@@ -20,8 +22,6 @@ def dashboard(request):
 
 @login_required
 def create_user(request):
-    print(f"User role: {request.user.role}")  # Debugging print to verify role in terminal
-
     if request.user.role not in ['superadmin', 'admin']:
         messages.error(request, "You are not authorized to create users.")
         return redirect('dashboard')
@@ -36,6 +36,27 @@ def create_user(request):
         form = UserRegistrationForm()
 
     return render(request, 'users/create_user.html', {'form': form})
+
+def generate_matric_id(request):
+    role = request.GET.get('role', 'student')
+    year = datetime.now().year % 100  # Get last two digits of the current year
+
+    prefix_mapping = {
+        'admin': 'A',
+        'staff': 'UC',
+        'lecturer': 'L',
+        'student': 'S'
+    }
+    prefix = prefix_mapping.get(role, 'S')
+
+    last_user = CustomUser.objects.filter(role=role).order_by('-matric_id').first()
+    if last_user and last_user.matric_id:
+        last_number = int(last_user.matric_id[3:]) + 1
+    else:
+        last_number = 1
+
+    matric_id = f"{year}{last_number:04d}"
+    return JsonResponse({'matric_id': matric_id})
 
 @login_required
 def user_list(request):

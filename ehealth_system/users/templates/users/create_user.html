@@ -11,20 +11,32 @@
   <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Back to User List</a>
 
   <script>
-      document.getElementById('id_hostel_block').addEventListener('change', function() {
-          var hostelId = this.value;
-          var roomSelect = document.getElementById('id_room');
+      document.addEventListener("DOMContentLoaded", function () {
+          var roleSelect = document.getElementById('id_role');
+          var matricField = document.getElementById('id_matric_id');
+          var emailField = document.getElementById('id_email');
+          
+          function updateMatricIDAndEmail() {
+              var role = roleSelect.value;
+              var prefixMapping = {
+                  'admin': 'A',
+                  'staff': 'UC',
+                  'lecturer': 'L',
+                  'student': 'S'
+              };
+              var prefix = prefixMapping[role] || 'S';
 
-          fetch(`/users/get-rooms/?hostel_id=` + hostelId)
-              .then(response => response.json())
-              .then(data => {
-                  roomSelect.innerHTML = '<option value="">Select Room</option>';
-                  data.rooms.forEach(room => {
-                      var option = new Option(room.number, room.id);
-                      roomSelect.add(option);
-                  });
-              })
-              .catch(error => console.error('Error fetching rooms:', error));
+              fetch(`/users/generate-matric-id/?role=` + role)
+                  .then(response => response.json())
+                  .then(data => {
+                      var generatedMatricID = prefix + data.matric_id;
+                      matricField.value = generatedMatricID;
+                      emailField.value = generatedMatricID + '@' + role + '.mmu.edu.my';
+                  })
+                  .catch(error => console.error('Error fetching matric ID:', error));
+          }
+
+          roleSelect.addEventListener('change', updateMatricIDAndEmail);
       });
   </script>
 {% endblock %}
