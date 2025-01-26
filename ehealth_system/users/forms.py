@@ -9,15 +9,17 @@ class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=False, label="Email", widget=forms.TextInput(attrs={'readonly': 'readonly'}))
     name = forms.CharField(max_length=100, required=False, label="Full Name")
     phone_number = forms.CharField(max_length=15, required=False)
+
+    # Hostel and room are optional
     hostel_block = forms.ModelChoiceField(
         queryset=Hostel.objects.all(),
-        empty_label="Select Hostel",
-        required=True,
+        empty_label="Select Hostel (Optional)",
+        required=False,
     )
     room = forms.ModelChoiceField(
         queryset=Room.objects.none(),
-        empty_label="Select Room",
-        required=True,
+        empty_label="Select Room (Optional)",
+        required=False,
     )
 
     class Meta:

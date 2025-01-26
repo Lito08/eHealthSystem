@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
@@ -13,7 +13,6 @@ CustomUser = get_user_model()
 
 @login_required
 def dashboard(request):
-    # Ensure only superadmins and admins can access
     if request.user.role not in ['superadmin', 'admin']:
         messages.error(request, "You are not authorized to access this page.")
         return redirect('home')
@@ -74,6 +73,25 @@ def get_rooms(request):
         rooms = Room.objects.filter(hostel_id=hostel_id).values('id', 'number')
         return JsonResponse({'rooms': list(rooms)})
     return JsonResponse({'rooms': []})
+
+@login_required
+def update_user(request, user_id):
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to update user details.")
+        return redirect('dashboard')
+
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "User updated successfully!")
+            return redirect('user_list')
+    else:
+        form = UserRegistrationForm(instance=user)
+    
+    return render(request, 'users/update_user.html', {'form': form, 'user': user})
 
 def user_login(request):
     if request.method == 'POST':
