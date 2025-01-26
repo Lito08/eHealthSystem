@@ -5,8 +5,9 @@ from hostels.models import Hostel, Room
 
 class UserRegistrationForm(UserCreationForm):
     role = forms.ChoiceField(choices=CustomUser.ROLE_CHOICES)
+    matric_id = forms.CharField(max_length=20, required=True, label="Matric ID")
     email = forms.EmailField()
-    matric_id = forms.CharField(max_length=20, required=False)
+    phone_number = forms.CharField(max_length=15, required=False)
     hostel_block = forms.ModelChoiceField(
         queryset=Hostel.objects.all(),
         empty_label="Select Hostel",
@@ -20,7 +21,7 @@ class UserRegistrationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ['role', 'username', 'email', 'matric_id', 'phone_number', 'hostel_block', 'room', 'password1', 'password2']
+        fields = ['role', 'matric_id', 'email', 'phone_number', 'hostel_block', 'room', 'password1', 'password2']
 
     def __init__(self, *args, **kwargs):
         super(UserRegistrationForm, self).__init__(*args, **kwargs)

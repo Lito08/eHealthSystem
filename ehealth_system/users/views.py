@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib import messages
@@ -52,3 +53,15 @@ def get_rooms(request):
         rooms = Room.objects.filter(hostel_id=hostel_id).values('id', 'number')
         return JsonResponse({'rooms': list(rooms)})
     return JsonResponse({'rooms': []})
+
+def user_login(request):
+    if request.method == 'POST':
+        matric_id = request.POST['matric_id']
+        password = request.POST['password']
+        user = authenticate(request, matric_id=matric_id, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Invalid Matric ID or password.")
+    return render(request, 'users/login.html')
