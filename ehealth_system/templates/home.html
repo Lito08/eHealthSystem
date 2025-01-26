@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container text-center mt-5">
+      <h1>Welcome to the eHealth System</h1>
+      {% if user.is_authenticated %}
+          <p class="lead">Welcome, {{ user.username }}! Managing COVID-19 quarantine and appointments for MMU residents.</p>
+          {% if user.role == 'superadmin' or user.role == 'admin' %}
+              <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+          {% else %}
+              <p class="lead">You are logged in as a resident. Please check your appointment status.</p>
+          {% endif %}
+      {% else %}
+          <p class="lead">Managing COVID-19 quarantine and appointments for MMU residents.</p>
+          <div class="mt-4">
+              <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login</a>
+          </div>
+      {% endif %}
+  </div>
+{% endblock %}

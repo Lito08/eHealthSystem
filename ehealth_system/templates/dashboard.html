@@ -1,8 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container">
-    <h2 class="text-center">Welcome to the Dashboard</h2>
-    <p>Select an option from the menu to manage users and appointments.</p>
-</div>
+  <div class="container text-center mt-5">
+      <h1>Welcome to the Dashboard</h1>
+      <p>Select an option from the menu to manage users and appointments.</p>
+
+      <div class="mt-4">
+          <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+      </div>
+  </div>
 {% endblock %}

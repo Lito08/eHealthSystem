@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-ufiyl16vyvqyq$-4nl^0n2upcd=#9$gx!svzsd&(65r&k)7up*
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+LOGIN_REDIRECT_URL = 'home'
 AUTH_USER_MODEL = 'users.CustomUser'
 
 # Application definition
