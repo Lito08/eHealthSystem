@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Rooms in {{ hostel.name }}</h2>
+  <a href="{% url 'hostel_list' %}" class="btn btn-secondary">Back to Hostels</a>
+  <ul class="list-group mt-3">
+      {% for room in rooms %}
+          <li class="list-group-item">
+              Room Number: <strong>{{ room.number }}</strong>
+              {% if room.is_available %}
+                  <span class="badge bg-success">Available</span>
+              {% else %}
+                  <span class="badge bg-danger">Occupied</span>
+              {% endif %}
+          </li>
+      {% empty %}
+          <li class="list-group-item text-muted">No rooms available in this hostel.</li>
+      {% endfor %}
+  </ul>
+{% endblock %}

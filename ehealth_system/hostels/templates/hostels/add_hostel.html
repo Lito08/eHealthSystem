@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Add Hostel</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Save</button>
+</form>
+<a href="{% url 'hostel_list' %}" class="btn btn-secondary mt-3">Back to List</a>
+{% endblock %}

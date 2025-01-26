@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Hostels</h2>
+<a href="{% url 'add_hostel' %}" class="btn btn-primary">Add Hostel</a>
+<ul class="list-group mt-3">
+    {% for hostel in hostels %}
+        <li class="list-group-item">
+            <strong>{{ hostel.name }}</strong> - {{ hostel.block }}
+            <a href="{% url 'room_list' hostel_id=hostel.id %}" class="btn btn-info btn-sm float-end">View Rooms</a>
+        </li>
+    {% empty %}
+        <li class="list-group-item text-muted">No hostels available.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
