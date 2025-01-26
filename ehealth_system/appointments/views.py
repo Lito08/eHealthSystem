@@ -13,9 +13,13 @@ def book_appointment(request):
         return redirect('appointment_list')
 
     if request.method == 'POST':
-        appointment_date = request.POST['appointment_date']
-        appointment_time = request.POST['appointment_time']
-        reason = request.POST['reason']
+        appointment_date = request.POST.get('appointment_date')
+        appointment_time = request.POST.get('appointment_time')
+        reason = request.POST.get('reason')
+
+        if not appointment_date or not appointment_time or not reason:
+            messages.error(request, "All fields are required.")
+            return redirect('book_appointment')
 
         Appointment.objects.create(
             appointment_id="APPT" + str(Appointment.objects.count() + 1),
@@ -29,7 +33,6 @@ def book_appointment(request):
         return redirect('appointment_list')
 
     return render(request, 'appointments/book_appointment.html', {'clinic': clinic})
-
 
 @login_required
 def appointment_list(request):

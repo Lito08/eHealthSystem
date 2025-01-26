@@ -23,6 +23,8 @@
                             <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}">Manage Hostels</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
                         {% endif %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'book_appointment' %}">Book Appointment</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}">My Appointments</a></li>
                         <li class="nav-item">
                             <form action="{% url 'logout' %}" method="post" style="display:inline;">
                                 {% csrf_token %}
