@@ -1,74 +1,83 @@
-# Import required library for data visualization
+# Import necessary libraries
 import matplotlib.pyplot as plt
 
-# Announcement System classes (from the previous implementation)
+
+# User authentication class
+class Authentication:
+    """
+    Handles user authentication for the admin dashboard.
+    """
+    def __init__(self):
+        self.credentials = {"ayla": "ayla123"}  # Default admin credentials
+
+    def login(self):
+        print("\n--- Admin Login ---")
+        username = input("Enter username: ")
+        password = input("Enter password: ")
+        if self.credentials.get(username) == password:
+            print("Login successful!\n")
+            return True
+        else:
+            print("Invalid credentials. Please try again.\n")
+            return False
+
+# Resident class
 class Resident:
-    """
-    Represents a resident subscribed to announcements.
-    """
     def __init__(self, name):
         self.name = name
         self.notifications = []
 
     def update(self, announcement):
-        self.notifications.append(announcement)  # Add announcement to resident's notifications
-        print(f"Notification for {self.name}: {announcement}")  # Display notification
+        self.notifications.append(announcement)
+        print(f"Notification for {self.name}: {announcement}")
 
     def view_notifications(self):
         print(f"\n{self.name}'s Notification History:")
         for i, notification in enumerate(self.notifications, 1):
-            print(f"{i}. {notification}")  # Display notification history
+            print(f"{i}. {notification}")
 
-
+# Announcement System class
 class AnnouncementSystem:
-    """
-    Manages announcements and notifies subscribed residents.
-    """
     def __init__(self):
         self.residents = []
         self.announcements = []
 
     def subscribe(self, resident):
-        self.residents.append(resident)  # Add resident to the subscriber list
+        if resident not in self.residents:
+            self.residents.append(resident)
 
     def post_announcement(self, announcement):
-        self.announcements.append(announcement)  # Add announcement to the list
+        self.announcements.append(announcement)
         for resident in self.residents:
-            resident.update(announcement)  # Notify all subscribed residents
+            resident.update(announcement)
 
     def view_announcements(self):
         print("\n--- All Announcements ---")
         for i, announcement in enumerate(self.announcements, 1):
-            print(f"{i}. {announcement}")  # Display all announcements
+            print(f"{i}. {announcement}")
 
     def delete_announcement(self, announcement_id):
         if 0 < announcement_id <= len(self.announcements):
-            deleted = self.announcements.pop(announcement_id - 1)  # Remove the announcement
+            deleted = self.announcements.pop(announcement_id - 1)
             print(f"Announcement '{deleted}' deleted successfully.")
         else:
-            print("Error: Announcement ID not found.")  # Handle invalid IDs
+            print("Error: Announcement ID not found.")
 
-
-# Admin Dashboard class for infection trends and analytics
+# Admin Dashboard class
 class AdminDashboard:
-    """
-    Provides analytics, trends, and management options for admins.
-    """
     def __init__(self, announcement_system):
-        self.infection_data = {"Area A": 10, "Area B": 5, "Area C": 15}  # Infection data
-        self.recovery_data = {"Area A": 3, "Area B": 2, "Area C": 4}    # Recovery data
-        self.announcement_system = announcement_system  # Link to announcement system
+        self.infection_data = {}
+        self.recovery_data = {}
+        self.announcement_system = announcement_system
 
     def show_dashboard(self):
-        """
-        Main menu for the admin dashboard.
-        """
         while True:
             print("\n--- Admin Dashboard ---")
             print("1. View Infection Trends")
             print("2. Manage Announcements")
-            print("3. Visualize Infection Trends")
-            print("4. Exit")
+            print("3. Update Infection Data")
+            print("4. Visualize Infection Trends")
+            print("5. Exit")
             choice = input("Enter your choice: ")
 
             if choice == "1":
@@ -76,17 +85,16 @@ class AdminDashboard:
             elif choice == "2":
                 self.manage_announcements()
             elif choice == "3":
-                self.visualize_infection_trends()
+                self.update_infection_data()
             elif choice == "4":
+                self.visualize_infection_trends()
+            elif choice == "5":
                 print("Exiting dashboard. Goodbye!")
                 break
             else:
                 print("Invalid choice. Please try again.")
 
     def view_infection_trends(self):
-        """
-        Display infection and recovery trends for different areas.
-        """
         print("\n--- Infection Trends ---")
         for area, cases in self.infection_data.items():
             recoveries = self.recovery_data.get(area, 0)
@@ -94,9 +102,6 @@ class AdminDashboard:
         self.identify_hotspots()
 
     def identify_hotspots(self):
-        """
-        Identify areas with high infection rates.
-        """
         print("\n--- Hotspots ---")
         hotspots = [area for area, cases in self.infection_data.items() if cases > 10]
         if hotspots:
@@ -105,9 +110,6 @@ class AdminDashboard:
             print("No hotspots detected.")
 
     def manage_announcements(self):
-        """
-        Manage announcements (post, view, delete).
-        """
         while True:
             print("\n--- Manage Announcements ---")
             print("1. Post an Announcement")
@@ -132,10 +134,22 @@ class AdminDashboard:
             else:
                 print("Invalid choice. Please try again.")
 
+    def update_infection_data(self):
+        print("\n--- Update Infection Data ---")
+        while True:
+            area = input("Enter area name (or type 'done' to finish): ")
+            if area.lower() == 'done':
+                break
+            try:
+                cases = int(input(f"Enter active cases for {area}: "))
+                recoveries = int(input(f"Enter recoveries for {area}: "))
+                self.infection_data[area] = cases
+                self.recovery_data[area] = recoveries
+                print(f"Data updated for {area}.")
+            except ValueError:
+                print("Invalid input. Please enter numbers for cases and recoveries.")
+
     def visualize_infection_trends(self):
-        """
-        Generate a bar chart to visualize infection and recovery trends.
-        """
         areas = list(self.infection_data.keys())
         cases = list(self.infection_data.values())
         recoveries = [self.recovery_data.get(area, 0) for area in areas]
@@ -149,20 +163,22 @@ class AdminDashboard:
         plt.legend()
         plt.show()
 
-
-# Main function to initialize and run the system
+# Main function
 if __name__ == "__main__":
-    # Initialize Announcement System
-    announcement_system = AnnouncementSystem()
+    # Authenticate admin
+    auth = Authentication()
+    if auth.login():
+        # Initialize Announcement System
+        announcement_system = AnnouncementSystem()
 
-    # Create residents and subscribe them to the announcement system
-    resident1 = Resident("Alice")
-    resident2 = Resident("Bob")
-    resident3 = Resident("Charlie")
-    announcement_system.subscribe(resident1)
-    announcement_system.subscribe(resident2)
-    announcement_system.subscribe(resident3)
+        # Create residents and subscribe them
+        resident1 = Resident("Alice")
+        resident2 = Resident("Bob")
+        resident3 = Resident("Charlie")
+        announcement_system.subscribe(resident1)
+        announcement_system.subscribe(resident2)
+        announcement_system.subscribe(resident3)
 
-    # Initialize and run Admin Dashboard
-    admin_dashboard = AdminDashboard(announcement_system)
-    admin_dashboard.show_dashboard()
+        # Initialize and run Admin Dashboard
+        admin_dashboard = AdminDashboard(announcement_system)
+        admin_dashboard.show_dashboard()
