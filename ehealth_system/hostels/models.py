@@ -11,10 +11,11 @@ class Hostel(models.Model):
         self.generate_rooms()
 
     def generate_rooms(self):
+        """Automatically generate rooms based on levels and rooms per level."""
         for level in range(1, self.levels + 1):
             for room_no in range(1, self.rooms_per_level + 1):
-                room_id = f"{self.block}-{level:02d}{room_no:02d}"
-                Room.objects.get_or_create(hostel=self, number=room_id)
+                room_number = f"{self.block}-{level:02d}{room_no:02d}"
+                Room.objects.get_or_create(hostel=self, number=room_number)
 
     def __str__(self):
         return self.name
@@ -22,6 +23,7 @@ class Hostel(models.Model):
 class Room(models.Model):
     hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE, related_name="rooms")
     number = models.CharField(max_length=20, unique=True)
+    is_occupied = models.BooleanField(default=False)  # Track room availability
 
     def __str__(self):
-        return f"{self.hostel.name} - {self.number}"
+        return f"{self.hostel.name} - {self.number} ({'Occupied' if self.is_occupied else 'Available'})"

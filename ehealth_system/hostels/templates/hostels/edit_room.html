@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Edit Room: {{ room.number }}</h2>
+  <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Update Room</button>
+  </form>
+  <a href="{% url 'room_list' hostel_id=room.hostel.id %}" class="btn btn-secondary mt-3">Back to Rooms</a>
+{% endblock %}

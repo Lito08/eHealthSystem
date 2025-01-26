@@ -6,12 +6,13 @@
   <ul class="list-group mt-3">
       {% for room in rooms %}
           <li class="list-group-item">
-              Room Number: <strong>{{ room.number }}</strong>
-              {% if room.is_available %}
-                  <span class="badge bg-success">Available</span>
-              {% else %}
+              Room Number: <strong>{{ room.number }}</strong> -
+              {% if room.is_occupied %}
                   <span class="badge bg-danger">Occupied</span>
+              {% else %}
+                  <span class="badge bg-success">Available</span>
               {% endif %}
+              <a href="{% url 'edit_room' room.id %}" class="btn btn-warning btn-sm float-end">Edit</a>
           </li>
       {% empty %}
           <li class="list-group-item text-muted">No rooms available in this hostel.</li>
