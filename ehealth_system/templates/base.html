@@ -20,6 +20,7 @@
                         {% if user.role == 'superadmin' or user.role == 'admin' %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'create_user' %}">Create User</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'user_list' %}">User List</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}">Manage Hostels</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
                         {% endif %}
                         <li class="nav-item">
