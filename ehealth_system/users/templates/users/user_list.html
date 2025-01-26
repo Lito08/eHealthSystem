@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+      <h2 class="text-center">User List</h2>
+      <table class="table table-striped">
+          <thead class="table-dark">
+              <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Matric ID</th>
+                  <th>Phone Number</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% for user in users %}
+                  <tr>
+                      <td>{{ user.username }}</td>
+                      <td>{{ user.email }}</td>
+                      <td>{{ user.get_role_display }}</td>
+                      <td>{{ user.matric_id }}</td>
+                      <td>{{ user.phone_number }}</td>
+                  </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+  </div>
+{% endblock %}

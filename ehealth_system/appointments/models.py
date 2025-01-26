@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import time  # Import the correct time format
+from django.conf import settings
 
 class Clinic(models.Model):
     name = models.CharField(max_length=100)
@@ -13,7 +14,7 @@ class Appointment(models.Model):
     appointment_id = models.CharField(max_length=50, unique=True, default="DEFAULT_APPT")
     appointment_date = models.DateField()
     appointment_time = models.TimeField(default=time(12, 0))  # Use proper time object
-    resident = models.ForeignKey(User, on_delete=models.CASCADE)
+    resident = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE)
     result = models.TextField(blank=True, null=True)  # Added based on class diagram
     status = models.CharField(max_length=20, choices=[

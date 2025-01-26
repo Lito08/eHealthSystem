@@ -1,16 +1,41 @@
 {% extends 'base.html' %}
+{% block title %}My Appointments{% endblock %}
+
 {% block content %}
-  <h2>My Appointments</h2>
-  <ul>
-    {% for appointment in appointments %}
-      <li>
-        {{ appointment.clinic.name }} - {{ appointment.appointment_date }} at {{ appointment.appointment_time }} ({{ appointment.status }})
-        <a href="{% url 'edit_appointment' appointment.appointment_id %}">Edit</a> |
-        <a href="{% url 'cancel_appointment' appointment.appointment_id %}">Cancel</a>
-        {% if appointment.status == "Scheduled" %}
-          | <a href="{% url 'confirm_appointment' appointment.appointment_id %}">Confirm</a>
-        {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
+  <div class="card shadow-lg">
+      <div class="card-header bg-primary text-white">
+          <h3 class="text-center">My Appointments</h3>
+      </div>
+      <div class="card-body">
+          {% if appointments %}
+              <table class="table table-striped">
+                  <thead class="table-dark">
+                      <tr>
+                          <th>Clinic</th>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for appointment in appointments %}
+                          <tr>
+                              <td>{{ appointment.clinic.name }}</td>
+                              <td>{{ appointment.appointment_date }}</td>
+                              <td>{{ appointment.appointment_time }}</td>
+                              <td><span class="badge bg-info">{{ appointment.status }}</span></td>
+                              <td>
+                                  <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-sm btn-warning">Edit</a>
+                                  <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-sm btn-danger">Cancel</a>
+                              </td>
+                          </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          {% else %}
+              <p class="text-center text-muted">No appointments found.</p>
+          {% endif %}
+      </div>
+  </div>
 {% endblock %}
