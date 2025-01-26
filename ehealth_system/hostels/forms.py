@@ -9,4 +9,4 @@ class HostelForm(forms.ModelForm):
 class RoomForm(forms.ModelForm):
     class Meta:
         model = Room
-        fields = ['hostel', 'number', 'is_occupied']
+        fields = ['resident']

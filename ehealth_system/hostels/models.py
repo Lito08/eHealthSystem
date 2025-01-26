@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Hostel(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -23,7 +24,11 @@ class Hostel(models.Model):
 class Room(models.Model):
     hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE, related_name="rooms")
     number = models.CharField(max_length=20, unique=True)
-    is_occupied = models.BooleanField(default=False)  # Track room availability
+    resident = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    @property
+    def is_occupied(self):
+        return self.resident is not None
 
     def __str__(self):
         return f"{self.hostel.name} - {self.number} ({'Occupied' if self.is_occupied else 'Available'})"
