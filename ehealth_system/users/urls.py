@@ -8,4 +8,5 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='home'), name='logout'),
     path('create/', views.create_user, name='create_user'),  # Admin-only user creation
     path('list/', views.user_list, name='user_list'),  # Admin can list users
+    path('get-rooms/', views.get_rooms, name='get_rooms'),  # Fetch rooms dynamically
 ]

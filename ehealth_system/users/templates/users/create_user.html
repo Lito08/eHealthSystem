@@ -1,12 +1,30 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <div class="container">
-      <h2 class="text-center">Create User Account</h2>
-      <form method="post" class="needs-validation">
-          {% csrf_token %}
-          {{ form.as_p }}
-          <button type="submit" class="btn btn-primary w-100">Create Account</button>
-      </form>
-  </div>
+  <h2>Create User</h2>
+  <form method="post" id="userForm">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Create User</button>
+  </form>
+
+  <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Back to User List</a>
+
+  <script>
+      document.getElementById('id_hostel_block').addEventListener('change', function() {
+          var hostelId = this.value;
+          var roomSelect = document.getElementById('id_room');
+
+          fetch(`/users/get-rooms/?hostel_id=` + hostelId)
+              .then(response => response.json())
+              .then(data => {
+                  roomSelect.innerHTML = '<option value="">Select Room</option>';
+                  data.rooms.forEach(room => {
+                      var option = new Option(room.number, room.id);
+                      roomSelect.add(option);
+                  });
+              })
+              .catch(error => console.error('Error fetching rooms:', error));
+      });
+  </script>
 {% endblock %}
