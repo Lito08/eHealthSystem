@@ -103,17 +103,39 @@ def update_user(request, user_id):
             if room_id:
                 try:
                     room = Room.objects.get(id=room_id)
-                    room.resident = user
-                    room.save()
+
+                    # Reassign the room only if it's not already assigned to this user
+                    if room.resident != user:
+                        # Clear any previously assigned room
+                        previous_room = Room.objects.filter(resident=user).first()
+                        if previous_room:
+                            previous_room.resident = None
+                            previous_room.save()
+
+                        # Assign the new room
+                        room.resident = user
+                        room.save()
                 except Room.DoesNotExist:
                     messages.error(request, "Selected room does not exist.")
                     return redirect('update_user', user_id=user.id)
+            else:
+                # If no room selected, clear the previous room assignment
+                previous_room = Room.objects.filter(resident=user).first()
+                if previous_room:
+                    previous_room.resident = None
+                    previous_room.save()
 
+            # Save the user instance
             user.save()
             messages.success(request, "User updated successfully!")
             return redirect('manage_users')
     else:
         form = UserRegistrationForm(instance=user)
+
+        # Pre-select the current room
+        assigned_room = Room.objects.filter(resident=user).first()
+        if assigned_room:
+            form.fields['room'].initial = assigned_room.id
 
     return render(request, 'users/update_user.html', {'form': form, 'user': user})
 
@@ -150,7 +172,7 @@ def get_rooms(request):
         # Include the assigned room for the user if editing
         if user_id:
             user = CustomUser.objects.get(id=user_id)
-            assigned_room = user.rooms_assigned.first()
+            assigned_room = Room.objects.filter(resident=user).first()
             if assigned_room and assigned_room.hostel.id == int(hostel_id):
                 rooms = rooms.union(Room.objects.filter(id=assigned_room.id).values('id', 'number'))
 

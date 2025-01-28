@@ -44,12 +44,11 @@
         const roomSelect = document.getElementById("id_room");
         const initialHostelId = "{{ user.rooms_assigned.first.hostel.id|default:'' }}";
         const initialRoomId = "{{ user.rooms_assigned.first.id|default:'' }}";
-        const userId = "{{ user.id }}";  // Pass user ID to the backend
 
         function updateRoomOptions() {
             const hostelId = hostelSelect.value;
             if (hostelId) {
-                fetch(`/users/get-rooms/?hostel_id=${hostelId}&user_id=${userId}`)
+                fetch(`/users/get-rooms/?hostel_id=${hostelId}&user_id={{ user.id }}`)
                     .then(response => response.json())
                     .then(data => {
                         roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
