@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib import messages
-from .forms import UserRegistrationForm
+from .forms import UserRegistrationForm, UserUpdateForm
 from django.http import JsonResponse
 from hostels.models import Room
 from .models import CustomUser
@@ -94,7 +94,7 @@ def update_user(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
 
     if request.method == 'POST':
-        form = UserRegistrationForm(request.POST, instance=user)
+        form = UserUpdateForm(request.POST, instance=user)
         if form.is_valid():
             user = form.save(commit=False)
 
@@ -103,20 +103,23 @@ def update_user(request, user_id):
             if room_id:
                 try:
                     room = Room.objects.get(id=room_id)
-                    # Clear previous room assignment if the room is different
-                    previous_room = Room.objects.filter(resident=user).first()
-                    if previous_room and previous_room != room:
-                        previous_room.resident = None
-                        previous_room.save()
 
-                    # Assign the selected room
-                    room.resident = user
-                    room.save()
+                    # Reassign the room only if it's not already assigned to this user
+                    if room.resident != user:
+                        # Clear any previously assigned room
+                        previous_room = Room.objects.filter(resident=user).first()
+                        if previous_room:
+                            previous_room.resident = None
+                            previous_room.save()
+
+                        # Assign the new room
+                        room.resident = user
+                        room.save()
                 except Room.DoesNotExist:
                     messages.error(request, "Selected room does not exist.")
                     return redirect('update_user', user_id=user.id)
             else:
-                # Clear any previously assigned room if no room is selected
+                # If no room selected, clear the previous room assignment
                 previous_room = Room.objects.filter(resident=user).first()
                 if previous_room:
                     previous_room.resident = None
@@ -126,24 +129,17 @@ def update_user(request, user_id):
             user.save()
             messages.success(request, "User updated successfully!")
             return redirect('manage_users')
-        else:
-            messages.error(request, "Invalid form data. Please correct the errors and try again.")
     else:
-        form = UserRegistrationForm(instance=user)
+        form = UserUpdateForm(instance=user)
 
-        # Prepopulate the room field if a room is assigned
-        assigned_room = Room.objects.filter(resident=user).first()
-        if assigned_room:
-            form.fields['hostel_block'].initial = assigned_room.hostel
-            form.fields['room'].initial = assigned_room.id
+        # Dynamically populate room queryset
+        if user.rooms_assigned.exists():
+            assigned_room = user.rooms_assigned.first()
+            form.fields['room'].queryset = Room.objects.filter(hostel=assigned_room.hostel).exclude(resident__isnull=False) | Room.objects.filter(id=assigned_room.id)
         else:
-            # Show all available rooms for selection
             form.fields['room'].queryset = Room.objects.filter(resident=None)
 
-    return render(request, 'users/update_user.html', {
-        'form': form,
-        'user': user,
-    })
+    return render(request, 'users/update_user.html', {'form': form, 'user': user})
 
 @login_required
 def clear_room(request, user_id):
