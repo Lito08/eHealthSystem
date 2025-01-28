@@ -25,18 +25,6 @@
             <label for="id_phone_number">Phone Number:</label>
             {{ form.phone_number }}
         </div>
-
-        {% if assigned_room %}
-        <!-- For Users with Assigned Rooms -->
-        <div class="mb-3">
-            <label for="id_room">Assigned Room:</label>
-            <input type="text" class="form-control" id="id_room" value="{{ assigned_room.hostel.block }} - {{ assigned_room.number }}" readonly>
-        </div>
-        <div class="mb-3">
-            <button type="button" id="clearRoomBtn" class="btn btn-warning">Clear Room Assignment</button>
-        </div>
-        {% else %}
-        <!-- For Users Without Assigned Rooms -->
         <div class="mb-3">
             <label for="id_hostel_block">Hostel Block:</label>
             {{ form.hostel_block }}
@@ -45,8 +33,6 @@
             <label for="id_room">Room:</label>
             {{ form.room }}
         </div>
-        {% endif %}
-
         <button type="submit" class="btn btn-primary">Update User</button>
     </form>
     <a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">Back to Manage Users</a>
@@ -56,7 +42,6 @@
     document.addEventListener("DOMContentLoaded", function () {
         const hostelSelect = document.getElementById("id_hostel_block");
         const roomSelect = document.getElementById("id_room");
-        const clearRoomBtn = document.getElementById("clearRoomBtn");
 
         function updateRoomOptions() {
             const hostelId = hostelSelect.value;
@@ -76,21 +61,9 @@
             }
         }
 
+        // Bind event listeners
         if (hostelSelect) {
             hostelSelect.addEventListener("change", updateRoomOptions);
-        }
-
-        if (clearRoomBtn) {
-            clearRoomBtn.addEventListener("click", function () {
-                fetch(`/users/clear-room/{{ user.id }}/`)  // Pass user ID dynamically
-                    .then(response => {
-                        if (response.ok) {
-                            location.reload();  // Reload the page to show the updated UI
-                        } else {
-                            alert("Failed to clear room assignment.");
-                        }
-                    });
-            });
         }
     });
 </script>

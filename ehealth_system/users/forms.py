@@ -52,6 +52,7 @@ class UserRegistrationForm(UserCreationForm):
             (r[0], r[1]) for r in self.fields["role"].choices if r[0] != "superadmin"
         ]
 
+        # Handle the form's behavior differently for creating or editing a user
         if self.instance.pk:  # Editing an existing user
             assigned_room = (
                 self.instance.rooms_assigned.first()
@@ -59,14 +60,18 @@ class UserRegistrationForm(UserCreationForm):
                 and self.instance.rooms_assigned.exists()
                 else None
             )
+
             if assigned_room:
+                # Set the initial hostel block and include all rooms in the same hostel
                 self.fields["hostel_block"].initial = assigned_room.hostel
-                # Include all rooms in the selected hostel, and ensure the assigned room is in the queryset
                 self.fields["room"].queryset = Room.objects.filter(
                     hostel=assigned_room.hostel
-                ).exclude(resident__isnull=False) | Room.objects.filter(id=assigned_room.id)
+                ).exclude(resident__isnull=False).union(
+                    Room.objects.filter(id=assigned_room.id)
+                )
                 self.fields["room"].initial = assigned_room
             else:
+                # No assigned room; allow selecting from all available rooms
                 self.fields["room"].queryset = Room.objects.filter(resident=None)
         else:  # Creating a new user
             self.fields["room"].queryset = Room.objects.filter(resident=None)

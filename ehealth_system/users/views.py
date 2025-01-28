@@ -92,29 +92,58 @@ def update_user(request, user_id):
         return redirect('dashboard')
 
     user = get_object_or_404(CustomUser, id=user_id)
-    assigned_room = Room.objects.filter(resident=user).first()
 
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST, instance=user)
         if form.is_valid():
             user = form.save(commit=False)
 
-            # Handle room assignment if no room was previously assigned
-            if not assigned_room:
-                room_id = request.POST.get('room')
-                if room_id:
+            # Handle room assignment
+            room_id = request.POST.get('room')
+            if room_id:
+                try:
                     room = Room.objects.get(id=room_id)
+                    # Clear previous room assignment if the room is different
+                    previous_room = Room.objects.filter(resident=user).first()
+                    if previous_room and previous_room != room:
+                        previous_room.resident = None
+                        previous_room.save()
+
+                    # Assign the selected room
                     room.resident = user
                     room.save()
+                except Room.DoesNotExist:
+                    messages.error(request, "Selected room does not exist.")
+                    return redirect('update_user', user_id=user.id)
+            else:
+                # Clear any previously assigned room if no room is selected
+                previous_room = Room.objects.filter(resident=user).first()
+                if previous_room:
+                    previous_room.resident = None
+                    previous_room.save()
+
+            # Save the user instance
             user.save()
             messages.success(request, "User updated successfully!")
             return redirect('manage_users')
+        else:
+            messages.error(request, "Invalid form data. Please correct the errors and try again.")
     else:
         form = UserRegistrationForm(instance=user)
-        if assigned_room:
-            form.fields['room'].initial = assigned_room.id
 
-    return render(request, 'users/update_user.html', {'form': form, 'user': user, 'assigned_room': assigned_room})
+        # Prepopulate the room field if a room is assigned
+        assigned_room = Room.objects.filter(resident=user).first()
+        if assigned_room:
+            form.fields['hostel_block'].initial = assigned_room.hostel
+            form.fields['room'].initial = assigned_room.id
+        else:
+            # Show all available rooms for selection
+            form.fields['room'].queryset = Room.objects.filter(resident=None)
+
+    return render(request, 'users/update_user.html', {
+        'form': form,
+        'user': user,
+    })
 
 @login_required
 def clear_room(request, user_id):
