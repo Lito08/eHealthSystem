@@ -7,4 +7,6 @@ urlpatterns = [
     path('edit/<str:appointment_id>/', views.edit_appointment, name='edit_appointment'),
     path('cancel/<str:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('confirm/<str:appointment_id>/', views.confirm_appointment, name='confirm_appointment'),
+    path('report-health/', views.report_health, name='report_health'),
 ]
+

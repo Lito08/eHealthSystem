@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Report Health Risk{% endblock %}
+
+{% block content %}
+  <div class="card shadow-lg">
+      <div class="card-header bg-warning text-white">
+          <h3 class="text-center">Report Health Risk</h3>
+      </div>
+      <div class="card-body">
+
+          <!-- Check for ongoing appointment -->
+          {% if ongoing_appointment %}
+              <p class="lead text-center text-danger">
+                  You already have an ongoing appointment scheduled on 
+                  <strong>{{ ongoing_appointment.appointment_date }}</strong> at 
+                  <strong>{{ ongoing_appointment.appointment_time }}</strong>.
+              </p>
+              <div class="text-center mt-3">
+                  <a href="{% url 'appointment_list' %}" class="btn btn-primary">View My Appointments</a>
+              </div>
+          {% else %}
+              <p class="lead">Do you have any COVID-19 symptoms such as fever, cough, or difficulty breathing?</p>
+              <form method="post">
+                  {% csrf_token %}
+                  <div class="d-grid gap-2">
+                      <button type="submit" name="has_symptoms" value="yes" class="btn btn-danger btn-lg">Yes</button>
+                      <button type="submit" name="has_symptoms" value="no" class="btn btn-success btn-lg">No</button>
+                  </div>
+              </form>
+          {% endif %}
+      </div>
+  </div>
+{% endblock %}

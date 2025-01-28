@@ -1,6 +1,6 @@
 import uuid
 from datetime import time
-from django.db import models
+from django.db import models, IntegrityError
 from django.conf import settings
 
 class Clinic(models.Model):
@@ -13,7 +13,7 @@ class Clinic(models.Model):
 class Appointment(models.Model):
     appointment_id = models.CharField(max_length=50, unique=True, blank=True)
     appointment_date = models.DateField()
-    appointment_time = models.TimeField(default=time(12, 0))  # Use proper time object
+    appointment_time = models.TimeField(default=time(12, 0))
     resident = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE)
     result = models.TextField(blank=True, null=True)
@@ -23,6 +23,14 @@ class Appointment(models.Model):
         ('Cancelled', 'Cancelled'),
         ('Confirmed', 'Confirmed'),
     ], default='Scheduled')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['appointment_date', 'appointment_time', 'clinic'],
+                name='unique_clinic_appointment'
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if not self.appointment_id:
@@ -34,4 +42,4 @@ class Appointment(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.resident.matric_id} - {self.clinic.name} on {self.appointment_date}"
+        return f"{self.resident.matric_id} - {self.clinic.name} on {self.appointment_date} at {self.appointment_time}"

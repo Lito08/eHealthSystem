@@ -26,8 +26,10 @@
                               <td>{{ appointment.appointment_time }}</td>
                               <td><span class="badge bg-info">{{ appointment.status }}</span></td>
                               <td>
-                                  <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-sm btn-warning">Edit</a>
-                                  <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-sm btn-danger">Cancel</a>
+                                {% if user.role == 'admin' or user.role == 'superadmin' %}
+                                <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-warning btn-sm">Edit</a>
+                                {% endif %}
+                                <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm">Cancel</a>                            
                               </td>
                           </tr>
                       {% endfor %}
