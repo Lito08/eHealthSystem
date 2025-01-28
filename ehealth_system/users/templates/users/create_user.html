@@ -52,6 +52,9 @@
                   .catch(error => console.error('Error fetching rooms:', error));
           }
 
+          // Trigger the update on page load to initialize matric ID and email fields
+          updateMatricIDAndEmail();
+
           roleSelect.addEventListener('change', updateMatricIDAndEmail);
           hostelSelect.addEventListener('change', updateRoomOptions);
       });
