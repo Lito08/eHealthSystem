@@ -24,7 +24,7 @@ class UserRegistrationForm(UserCreationForm):
         required=False,
     )
     room = forms.ModelChoiceField(
-        queryset=Room.objects.filter(resident__isnull=True),
+        queryset=Room.objects.none(),
         empty_label="Select Room (Optional)",
         required=False,
     )
@@ -39,18 +39,21 @@ class UserRegistrationForm(UserCreationForm):
         # Exclude 'superadmin' from role choices
         self.fields['role'].choices = [(r[0], r[1]) for r in self.fields['role'].choices if r[0] != 'superadmin']
 
-        # Dynamically filter rooms based on selected hostel block
+        # Dynamically populate room options based on the selected hostel
         if 'hostel_block' in self.data:
             try:
                 hostel_id = int(self.data.get('hostel_block'))
-                self.fields['room'].queryset = Room.objects.filter(hostel_id=hostel_id, resident__isnull=True)
+                self.fields['room'].queryset = Room.objects.filter(hostel_id=hostel_id, resident=None)
             except (ValueError, TypeError):
                 self.fields['room'].queryset = Room.objects.none()
-        elif self.instance.pk and self.instance.room:
-            # Include current room if editing a user
-            self.fields['room'].queryset = Room.objects.filter(
-                hostel=self.instance.room.hostel
-            ) | Room.objects.filter(resident=self.instance)
+        elif self.instance.pk:  # If editing an existing user
+            if self.instance.room:
+                hostel_id = self.instance.room.hostel.id
+                self.fields['room'].queryset = Room.objects.filter(
+                    hostel_id=hostel_id
+                ) | Room.objects.filter(resident=self.instance)
+            else:
+                self.fields['room'].queryset = Room.objects.none()
         else:
             self.fields['room'].queryset = Room.objects.none()
 

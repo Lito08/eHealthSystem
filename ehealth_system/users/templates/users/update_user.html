@@ -1,69 +1,55 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <div class="container">
-      <h2 class="text-center">Update User: {{ user.matric_id }}</h2>
-      <form method="post" id="userForm">
-          {% csrf_token %}
-          <div class="mb-3">
-              <label for="id_role">Role:</label>
-              {{ form.role }}
-          </div>
-          <div class="mb-3">
-              <label for="id_matric_id">Matric ID:</label>
-              {{ form.matric_id }}
-          </div>
-          <div class="mb-3">
-              <label for="id_email">Email:</label>
-              {{ form.email }}
-          </div>
-          <div class="mb-3">
-              <label for="id_full_name">Full Name:</label>
-              {{ form.full_name }}
-          </div>
-          <div class="mb-3">
-              <label for="id_phone_number">Phone Number:</label>
-              {{ form.phone_number }}
-          </div>
-          <div class="mb-3">
-              <label for="id_room">Room:</label>
-              {{ form.room }}
-          </div>
-          <button type="submit" class="btn btn-primary">Update User</button>
-      </form>
-      <a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">Back to Manage Users</a>
-  </div>
+<div class="container">
+    <h2 class="text-center">Update User: {{ user.matric_id }}</h2>
+    <form method="post" id="userForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_role">Role:</label>
+            {{ form.role }}
+        </div>
+        <div class="mb-3">
+            <label for="id_matric_id">Matric ID:</label>
+            {{ form.matric_id }}
+        </div>
+        <div class="mb-3">
+            <label for="id_email">Email:</label>
+            {{ form.email }}
+        </div>
+        <div class="mb-3">
+            <label for="id_full_name">Full Name:</label>
+            {{ form.full_name }}
+        </div>
+        <div class="mb-3">
+            <label for="id_phone_number">Phone Number:</label>
+            {{ form.phone_number }}
+        </div>
+        <div class="mb-3">
+            <label for="id_room">Room:</label>
+            {{ form.room }}
+        </div>
+        <button type="submit" class="btn btn-primary">Update User</button>
+    </form>
+    <a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">Back to Manage Users</a>
+</div>
 
-  <script>
-      document.addEventListener("DOMContentLoaded", function () {
-          const roomSelect = document.getElementById('id_room');
-          const hostelSelect = document.getElementById('id_hostel_block');
-          const initialRoomId = "{{ user.room.id|default:'' }}";
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const roomSelect = document.getElementById('id_room');
+        const initialRoomId = "{{ user.rooms_assigned.first.id|default:'' }}";
 
-          function updateRoomOptions() {
-              const hostelId = hostelSelect.value;
-              if (hostelId) {
-                  fetch(`/users/get-rooms/?hostel_id=${hostelId}`)
-                      .then(response => response.json())
-                      .then(data => {
-                          roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
-                          data.rooms.forEach(room => {
-                              const option = new Option(room.number, room.id);
-                              if (room.id === initialRoomId) {
-                                  option.selected = true;
-                              }
-                              roomSelect.add(option);
-                          });
-                      })
-                      .catch(error => console.error('Error fetching rooms:', error));
-              } else {
-                  roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
-              }
-          }
+        function preloadRoomOptions() {
+            if (roomSelect && initialRoomId) {
+                [...roomSelect.options].forEach(option => {
+                    if (option.value == initialRoomId) {
+                        option.selected = true;
+                    }
+                });
+            }
+        }
 
-          // Initialize fields with pre-existing data
-          updateRoomOptions();
-          hostelSelect.addEventListener('change', updateRoomOptions);
-      });
-  </script>
+        preloadRoomOptions(); // Preselect the room if assigned
+    });
+</script>
 {% endblock %}

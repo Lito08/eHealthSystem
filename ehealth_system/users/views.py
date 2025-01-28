@@ -92,11 +92,13 @@ def update_user(request, user_id):
         return redirect('dashboard')
 
     user = get_object_or_404(CustomUser, id=user_id)
+
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST, instance=user)
         if form.is_valid():
             user = form.save(commit=False)
 
+            # Handle room assignment
             room_id = request.POST.get('room')
             if room_id:
                 try:

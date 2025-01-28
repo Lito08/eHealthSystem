@@ -80,6 +80,17 @@ def edit_room(request, room_id):
     if request.method == 'POST':
         form = RoomForm(request.POST, instance=room)
         if form.is_valid():
+            room = form.save(commit=False)
+
+            # Clear the existing room assignment if necessary
+            if room.resident:
+                previous_resident = room.resident
+                if previous_resident.rooms_assigned.exists():
+                    previous_room = previous_resident.rooms_assigned.first()
+                    if previous_room.id != room.id:
+                        previous_room.resident = None
+                        previous_room.save()
+
             form.save()
             messages.success(request, f"Room '{room.number}' updated successfully!")
             return redirect('room_list', hostel_id=room.hostel.id)

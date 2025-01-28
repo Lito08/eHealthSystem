@@ -10,7 +10,7 @@ class HostelForm(forms.ModelForm):
 
 class RoomForm(forms.ModelForm):
     resident = forms.ModelChoiceField(
-        queryset=CustomUser.objects.none(),  # Default to none, dynamically populated in `__init__`
+        queryset=CustomUser.objects.none(),  # Dynamically populated in `__init__`
         required=False,
         label="Assigned Resident",
     )
@@ -21,27 +21,17 @@ class RoomForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(RoomForm, self).__init__(*args, **kwargs)
-
-        # Limit the queryset to residents who are eligible for room assignment
         if self.instance and self.instance.resident:
-            # Include the current resident to allow editing
             self.fields['resident'].queryset = CustomUser.objects.filter(
-                models.Q(role__in=['student', 'staff', 'lecturer']),
-                models.Q(rooms_assigned=None) | models.Q(id=self.instance.resident.id)
+                models.Q(role='student', rooms_assigned=None) | models.Q(id=self.instance.resident.id)
             )
         else:
-            self.fields['resident'].queryset = CustomUser.objects.filter(
-                role__in=['student', 'staff', 'lecturer'],
-                rooms_assigned=None
-            )
+            self.fields['resident'].queryset = CustomUser.objects.filter(role='student', rooms_assigned=None)
 
-        # Customize the display of resident options to include matric ID and full name
-        self.fields['resident'].label_from_instance = lambda obj: f"{obj.matric_id} - {obj.full_name}"
+        self.fields['resident'].label_from_instance = lambda obj: f"{obj.matric_id} - {obj.full_name or 'N/A'}"
 
     def save(self, commit=True):
         room = super(RoomForm, self).save(commit=False)
-
-        # Update `is_occupied` based on the presence of a resident
         if self.cleaned_data.get('resident'):
             room.is_occupied = True
         else:
@@ -49,10 +39,9 @@ class RoomForm(forms.ModelForm):
 
         if commit:
             room.save()
-
-            # Update the resident's room assignment if applicable
             if self.cleaned_data.get('resident'):
-                self.cleaned_data['resident'].rooms_assigned.clear()  # Clear existing room assignments
+                # Clear previous room assignments for this resident
+                self.cleaned_data['resident'].rooms_assigned.clear()
                 self.cleaned_data['resident'].rooms_assigned.add(room)
 
         return room

@@ -92,7 +92,6 @@ def edit_appointment(request, appointment_id):
             return redirect('edit_appointment', appointment_id=appointment_id)
 
         try:
-            # Parse time in a format without "a.m./p.m."
             appointment_time_obj = datetime.strptime(appointment_time, "%H:%M").time()
         except ValueError:
             messages.error(request, "Invalid time format. Please select a valid time.")
@@ -101,6 +100,17 @@ def edit_appointment(request, appointment_id):
         # Validate time selection
         if appointment_time_obj not in time_slots:
             messages.error(request, "Invalid time selected. Please choose a valid 15-minute slot.")
+            return redirect('edit_appointment', appointment_id=appointment_id)
+
+        # Check for overlapping appointments
+        overlapping_appointment = Appointment.objects.filter(
+            clinic=appointment.clinic,
+            appointment_date=appointment_date,
+            appointment_time=appointment_time_obj,
+        ).exclude(id=appointment.id).exists()
+
+        if overlapping_appointment:
+            messages.error(request, "The selected timeslot is already taken. Please choose another time.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
         appointment.appointment_date = appointment_date
