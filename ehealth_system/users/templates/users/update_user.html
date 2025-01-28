@@ -26,6 +26,10 @@
             {{ form.phone_number }}
         </div>
         <div class="mb-3">
+            <label for="id_hostel_block">Hostel Block:</label>
+            {{ form.hostel_block }}
+        </div>
+        <div class="mb-3">
             <label for="id_room">Room:</label>
             {{ form.room }}
         </div>
@@ -36,20 +40,40 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const roomSelect = document.getElementById('id_room');
+        const hostelSelect = document.getElementById("id_hostel_block");
+        const roomSelect = document.getElementById("id_room");
+        const initialHostelId = "{{ user.rooms_assigned.first.hostel.id|default:'' }}";
         const initialRoomId = "{{ user.rooms_assigned.first.id|default:'' }}";
+        const userId = "{{ user.id }}";  // Pass user ID to the backend
 
-        function preloadRoomOptions() {
-            if (roomSelect && initialRoomId) {
-                [...roomSelect.options].forEach(option => {
-                    if (option.value == initialRoomId) {
-                        option.selected = true;
-                    }
-                });
+        function updateRoomOptions() {
+            const hostelId = hostelSelect.value;
+            if (hostelId) {
+                fetch(`/users/get-rooms/?hostel_id=${hostelId}&user_id=${userId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
+                        data.rooms.forEach(room => {
+                            const option = new Option(room.number, room.id);
+                            if (room.id == initialRoomId) {
+                                option.selected = true;
+                            }
+                            roomSelect.add(option);
+                        });
+                    })
+                    .catch(error => console.error("Error fetching rooms:", error));
+            } else {
+                roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
             }
         }
 
-        preloadRoomOptions(); // Preselect the room if assigned
+        // Prepopulate hostel and room if editing
+        if (initialHostelId) {
+            hostelSelect.value = initialHostelId;
+            updateRoomOptions();
+        }
+
+        hostelSelect.addEventListener("change", updateRoomOptions);
     });
 </script>
 {% endblock %}

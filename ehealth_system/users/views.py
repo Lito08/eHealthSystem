@@ -141,7 +141,18 @@ def delete_user(request, user_id):
 @login_required
 def get_rooms(request):
     hostel_id = request.GET.get('hostel_id')
+    user_id = request.GET.get('user_id')  # Pass the current user ID for editing
+
     if hostel_id:
+        # Fetch rooms for the selected hostel
         rooms = Room.objects.filter(hostel_id=hostel_id, resident=None).values('id', 'number')
+
+        # Include the assigned room for the user if editing
+        if user_id:
+            user = CustomUser.objects.get(id=user_id)
+            assigned_room = user.rooms_assigned.first()
+            if assigned_room and assigned_room.hostel.id == int(hostel_id):
+                rooms = rooms.union(Room.objects.filter(id=assigned_room.id).values('id', 'number'))
+
         return JsonResponse({'rooms': list(rooms)})
     return JsonResponse({'rooms': []})

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
-from hostels.models import Hostel, Room
+from hostels.models import Room, Hostel
 
 class UserRegistrationForm(UserCreationForm):
     role = forms.ChoiceField(choices=CustomUser.ROLE_CHOICES)
@@ -39,23 +39,17 @@ class UserRegistrationForm(UserCreationForm):
         # Exclude 'superadmin' from role choices
         self.fields['role'].choices = [(r[0], r[1]) for r in self.fields['role'].choices if r[0] != 'superadmin']
 
-        # Dynamically populate room options based on the selected hostel
-        if 'hostel_block' in self.data:
-            try:
-                hostel_id = int(self.data.get('hostel_block'))
-                self.fields['room'].queryset = Room.objects.filter(hostel_id=hostel_id, resident=None)
-            except (ValueError, TypeError):
-                self.fields['room'].queryset = Room.objects.none()
-        elif self.instance.pk:  # If editing an existing user
-            if self.instance.room:
-                hostel_id = self.instance.room.hostel.id
-                self.fields['room'].queryset = Room.objects.filter(
-                    hostel_id=hostel_id
-                ) | Room.objects.filter(resident=self.instance)
+        # Dynamically set the `room` queryset
+        if self.instance.pk:  # Editing an existing user
+            assigned_room = self.instance.rooms_assigned.first() if self.instance.rooms_assigned.exists() else None
+            if assigned_room:
+                self.fields['hostel_block'].initial = assigned_room.hostel
+                self.fields['room'].queryset = Room.objects.filter(hostel=assigned_room.hostel).exclude(resident__isnull=False).union(Room.objects.filter(id=assigned_room.id))
+                self.fields['room'].initial = assigned_room
             else:
-                self.fields['room'].queryset = Room.objects.none()
-        else:
-            self.fields['room'].queryset = Room.objects.none()
+                self.fields['room'].queryset = Room.objects.filter(resident=None)
+        else:  # Creating a new user
+            self.fields['room'].queryset = Room.objects.filter(resident=None)
 
         # Automatically hide the full_name field for 'superadmin'
         if self.instance.role == 'superadmin':
