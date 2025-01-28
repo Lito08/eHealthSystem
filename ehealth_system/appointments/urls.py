@@ -10,4 +10,3 @@ urlpatterns = [
     path('report-health/', views.report_health, name='report_health'),
     path('manage/', views.manage_appointments, name='manage_appointments'),
 ]
-

@@ -77,16 +77,42 @@ def edit_appointment(request, appointment_id):
         messages.error(request, "You are not authorized to edit appointments.")
         return redirect('appointment_list')
 
+    # Generate 15-minute time slots
+    time_slots = [
+        (datetime.combine(datetime.today(), time(8, 0)) + timedelta(minutes=15 * i)).time()
+        for i in range(48)  # 48 slots between 8:00 AM and 8:00 PM
+    ]
+
     if request.method == 'POST':
-        appointment.appointment_date = request.POST.get('appointment_date')
-        appointment.appointment_time = request.POST.get('appointment_time')
-        appointment.reason = request.POST.get('reason')
+        appointment_date = request.POST.get('appointment_date')
+        appointment_time = request.POST.get('appointment_time')
+
+        if not appointment_date or not appointment_time:
+            messages.error(request, "Both date and time are required.")
+            return redirect('edit_appointment', appointment_id=appointment_id)
+
+        try:
+            # Parse time in a format without "a.m./p.m."
+            appointment_time_obj = datetime.strptime(appointment_time, "%H:%M").time()
+        except ValueError:
+            messages.error(request, "Invalid time format. Please select a valid time.")
+            return redirect('edit_appointment', appointment_id=appointment_id)
+
+        # Validate time selection
+        if appointment_time_obj not in time_slots:
+            messages.error(request, "Invalid time selected. Please choose a valid 15-minute slot.")
+            return redirect('edit_appointment', appointment_id=appointment_id)
+
+        appointment.appointment_date = appointment_date
+        appointment.appointment_time = appointment_time_obj
         appointment.save()
         messages.success(request, "Appointment updated successfully.")
-        return redirect('appointment_list')
+        return redirect('manage_appointments')
 
-    return render(request, 'appointments/edit_appointment.html', {'appointment': appointment})
-
+    return render(request, 'appointments/edit_appointment.html', {
+        'appointment': appointment,
+        'time_slots': time_slots,
+    })
 
 @login_required
 def cancel_appointment(request, appointment_id):

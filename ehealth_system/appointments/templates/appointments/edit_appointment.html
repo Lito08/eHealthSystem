@@ -1,17 +1,37 @@
 {% extends 'base.html' %}
+{% block title %}Edit Appointment{% endblock %}
+
 {% block content %}
-  <h2>Edit Appointment</h2>
-  <form method="post">
-    {% csrf_token %}
-    <label for="appointment_date">New Date:</label>
-    <input type="date" name="appointment_date" value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
+<div class="card shadow-lg">
+    <div class="card-header bg-primary text-white">
+        <h3 class="text-center">Edit Appointment</h3>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+              <label for="appointment_date" class="form-label">Appointment Date:</label>
+              <input type="date" class="form-control" id="appointment_date" name="appointment_date"
+                     value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
+            </div>          
 
-    <label for="appointment_time">New Time:</label>
-    <input type="time" name="appointment_time" value="{{ appointment.appointment_time }}" required>
+            <div class="mb-3">
+              <label for="appointment_time" class="form-label">Appointment Time:</label>
+              <select id="appointment_time" name="appointment_time" class="form-select" required>
+                  {% for time in time_slots %}
+                      <option value="{{ time|time:'H:i' }}" {% if time == appointment.appointment_time %}selected{% endif %}>
+                          {{ time|time:'H:i' }}
+                      </option>
+                  {% endfor %}
+              </select>
+            </div>          
 
-    <label for="reason">Reason:</label>
-    <textarea name="reason">{{ appointment.reason }}</textarea>
-
-    <button type="submit">Update</button>
-  </form>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success">Update Appointment</button>
+                <a href="{% url 'manage_appointments' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
