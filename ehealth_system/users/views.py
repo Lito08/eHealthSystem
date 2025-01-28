@@ -92,52 +92,41 @@ def update_user(request, user_id):
         return redirect('dashboard')
 
     user = get_object_or_404(CustomUser, id=user_id)
+    assigned_room = Room.objects.filter(resident=user).first()
 
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST, instance=user)
         if form.is_valid():
             user = form.save(commit=False)
 
-            # Handle room assignment
-            room_id = request.POST.get('room')
-            if room_id:
-                try:
+            # Handle room assignment if no room was previously assigned
+            if not assigned_room:
+                room_id = request.POST.get('room')
+                if room_id:
                     room = Room.objects.get(id=room_id)
-
-                    # Reassign the room only if it's not already assigned to this user
-                    if room.resident != user:
-                        # Clear any previously assigned room
-                        previous_room = Room.objects.filter(resident=user).first()
-                        if previous_room:
-                            previous_room.resident = None
-                            previous_room.save()
-
-                        # Assign the new room
-                        room.resident = user
-                        room.save()
-                except Room.DoesNotExist:
-                    messages.error(request, "Selected room does not exist.")
-                    return redirect('update_user', user_id=user.id)
-            else:
-                # If no room selected, clear the previous room assignment
-                previous_room = Room.objects.filter(resident=user).first()
-                if previous_room:
-                    previous_room.resident = None
-                    previous_room.save()
-
-            # Save the user instance
+                    room.resident = user
+                    room.save()
             user.save()
             messages.success(request, "User updated successfully!")
             return redirect('manage_users')
     else:
         form = UserRegistrationForm(instance=user)
-
-        # Pre-select the current room
-        assigned_room = Room.objects.filter(resident=user).first()
         if assigned_room:
             form.fields['room'].initial = assigned_room.id
 
-    return render(request, 'users/update_user.html', {'form': form, 'user': user})
+    return render(request, 'users/update_user.html', {'form': form, 'user': user, 'assigned_room': assigned_room})
+
+@login_required
+def clear_room(request, user_id):
+    if request.user.role not in ['superadmin', 'admin']:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    user = get_object_or_404(CustomUser, id=user_id)
+    room = Room.objects.filter(resident=user).first()
+    if room:
+        room.resident = None
+        room.save()
+    return JsonResponse({'message': 'Room cleared successfully'})
 
 @login_required
 def delete_user(request, user_id):

@@ -25,6 +25,18 @@
             <label for="id_phone_number">Phone Number:</label>
             {{ form.phone_number }}
         </div>
+
+        {% if assigned_room %}
+        <!-- For Users with Assigned Rooms -->
+        <div class="mb-3">
+            <label for="id_room">Assigned Room:</label>
+            <input type="text" class="form-control" id="id_room" value="{{ assigned_room.hostel.block }} - {{ assigned_room.number }}" readonly>
+        </div>
+        <div class="mb-3">
+            <button type="button" id="clearRoomBtn" class="btn btn-warning">Clear Room Assignment</button>
+        </div>
+        {% else %}
+        <!-- For Users Without Assigned Rooms -->
         <div class="mb-3">
             <label for="id_hostel_block">Hostel Block:</label>
             {{ form.hostel_block }}
@@ -33,6 +45,8 @@
             <label for="id_room">Room:</label>
             {{ form.room }}
         </div>
+        {% endif %}
+
         <button type="submit" class="btn btn-primary">Update User</button>
     </form>
     <a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">Back to Manage Users</a>
@@ -42,21 +56,17 @@
     document.addEventListener("DOMContentLoaded", function () {
         const hostelSelect = document.getElementById("id_hostel_block");
         const roomSelect = document.getElementById("id_room");
-        const initialHostelId = "{{ user.rooms_assigned.first.hostel.id|default:'' }}";
-        const initialRoomId = "{{ user.rooms_assigned.first.id|default:'' }}";
+        const clearRoomBtn = document.getElementById("clearRoomBtn");
 
         function updateRoomOptions() {
             const hostelId = hostelSelect.value;
             if (hostelId) {
-                fetch(`/users/get-rooms/?hostel_id=${hostelId}&user_id={{ user.id }}`)
+                fetch(`/users/get-rooms/?hostel_id=${hostelId}`)
                     .then(response => response.json())
                     .then(data => {
                         roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
                         data.rooms.forEach(room => {
                             const option = new Option(room.number, room.id);
-                            if (room.id == initialRoomId) {
-                                option.selected = true;
-                            }
                             roomSelect.add(option);
                         });
                     })
@@ -66,13 +76,22 @@
             }
         }
 
-        // Prepopulate hostel and room if editing
-        if (initialHostelId) {
-            hostelSelect.value = initialHostelId;
-            updateRoomOptions();
+        if (hostelSelect) {
+            hostelSelect.addEventListener("change", updateRoomOptions);
         }
 
-        hostelSelect.addEventListener("change", updateRoomOptions);
+        if (clearRoomBtn) {
+            clearRoomBtn.addEventListener("click", function () {
+                fetch(`/users/clear-room/{{ user.id }}/`)  // Pass user ID dynamically
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();  // Reload the page to show the updated UI
+                        } else {
+                            alert("Failed to clear room assignment.");
+                        }
+                    });
+            });
+        }
     });
 </script>
 {% endblock %}

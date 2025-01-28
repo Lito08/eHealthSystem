@@ -9,7 +9,8 @@ urlpatterns = [
     path('create/', views.create_user, name='create_user'),
     path('manage/', views.manage_users, name='manage_users'),
     path('update/<int:user_id>/', views.update_user, name='update_user'),
-    path('delete/<int:user_id>/', views.delete_user, name='delete_user'),  # Added delete_user
+    path('clear-room/<int:user_id>/', views.clear_room, name='clear_room'),
+    path('delete/<int:user_id>/', views.delete_user, name='delete_user'),
     path('get-rooms/', views.get_rooms, name='get_rooms'),
     path('generate-matric-id/', views.generate_matric_id, name='generate_matric_id'),
 ]

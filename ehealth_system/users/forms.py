@@ -52,7 +52,6 @@ class UserRegistrationForm(UserCreationForm):
             (r[0], r[1]) for r in self.fields["role"].choices if r[0] != "superadmin"
         ]
 
-        # Dynamically set the `room` queryset based on the user's current assignment
         if self.instance.pk:  # Editing an existing user
             assigned_room = (
                 self.instance.rooms_assigned.first()
@@ -61,14 +60,13 @@ class UserRegistrationForm(UserCreationForm):
                 else None
             )
             if assigned_room:
-                # Preselect the user's current hostel and room
                 self.fields["hostel_block"].initial = assigned_room.hostel
+                # Include all rooms in the selected hostel, and ensure the assigned room is in the queryset
                 self.fields["room"].queryset = Room.objects.filter(
-                    hostel=assigned_room.hostel, resident=None
-                ).union(Room.objects.filter(id=assigned_room.id))
+                    hostel=assigned_room.hostel
+                ).exclude(resident__isnull=False) | Room.objects.filter(id=assigned_room.id)
                 self.fields["room"].initial = assigned_room
             else:
-                # Populate only available rooms if no room assigned
                 self.fields["room"].queryset = Room.objects.filter(resident=None)
         else:  # Creating a new user
             self.fields["room"].queryset = Room.objects.filter(resident=None)
