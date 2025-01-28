@@ -18,16 +18,12 @@
               {{ form.email }}
           </div>
           <div class="mb-3">
-              <label for="id_name">Full Name:</label>
-              {{ form.name }}
+              <label for="id_full_name">Full Name:</label>
+              {{ form.full_name }}
           </div>
           <div class="mb-3">
               <label for="id_phone_number">Phone Number:</label>
               {{ form.phone_number }}
-          </div>
-          <div class="mb-3">
-              <label for="id_hostel_block">Hostel Block:</label>
-              {{ form.hostel_block }}
           </div>
           <div class="mb-3">
               <label for="id_room">Room:</label>
@@ -35,23 +31,27 @@
           </div>
           <button type="submit" class="btn btn-primary">Update User</button>
       </form>
-      <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Back to User List</a>
+      <a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">Back to Manage Users</a>
   </div>
 
   <script>
       document.addEventListener("DOMContentLoaded", function () {
-          var hostelSelect = document.getElementById('id_hostel_block');
-          var roomSelect = document.getElementById('id_room');
+          const roomSelect = document.getElementById('id_room');
+          const hostelSelect = document.getElementById('id_hostel_block');
+          const initialRoomId = "{{ user.room.id|default:'' }}";
 
           function updateRoomOptions() {
-              var hostelId = hostelSelect.value;
+              const hostelId = hostelSelect.value;
               if (hostelId) {
-                  fetch(`/users/get-rooms/?hostel_id=` + hostelId)
+                  fetch(`/users/get-rooms/?hostel_id=${hostelId}`)
                       .then(response => response.json())
                       .then(data => {
                           roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
                           data.rooms.forEach(room => {
-                              var option = new Option(room.number, room.id);
+                              const option = new Option(room.number, room.id);
+                              if (room.id === initialRoomId) {
+                                  option.selected = true;
+                              }
                               roomSelect.add(option);
                           });
                       })
@@ -61,8 +61,9 @@
               }
           }
 
+          // Initialize fields with pre-existing data
+          updateRoomOptions();
           hostelSelect.addEventListener('change', updateRoomOptions);
-          updateRoomOptions();  // Load room options for pre-selected hostel
       });
   </script>
 {% endblock %}

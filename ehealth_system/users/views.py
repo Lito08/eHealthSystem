@@ -11,88 +11,6 @@ from datetime import datetime
 
 CustomUser = get_user_model()
 
-@login_required
-def dashboard(request):
-    if request.user.role not in ['superadmin', 'admin']:
-        messages.error(request, "You are not authorized to access this page.")
-        return redirect('home')
-    
-    return render(request, 'dashboard.html')
-
-@login_required
-def create_user(request):
-    if request.user.role not in ['superadmin', 'admin']:
-        messages.error(request, "You are not authorized to create users.")
-        return redirect('dashboard')
-
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "User created successfully!")
-            return redirect('user_list')
-    else:
-        form = UserRegistrationForm()
-
-    return render(request, 'users/create_user.html', {'form': form})
-
-def generate_matric_id(request):
-    role = request.GET.get('role', 'student')
-    year = datetime.now().year % 100  # Get last two digits of the current year
-
-    prefix_mapping = {
-        'admin': 'A',
-        'staff': 'UC',
-        'lecturer': 'L',
-        'student': 'S'
-    }
-    prefix = prefix_mapping.get(role, 'S')
-
-    last_user = CustomUser.objects.filter(role=role).order_by('-matric_id').first()
-    if last_user and last_user.matric_id:
-        last_number = int(last_user.matric_id[3:]) + 1
-    else:
-        last_number = 1
-
-    matric_id = f"{year}{last_number:04d}"
-    return JsonResponse({'matric_id': matric_id})
-
-@login_required
-def user_list(request):
-    if request.user.role not in ['superadmin', 'admin']:  
-        messages.error(request, "You are not authorized to view users.")
-        return redirect('dashboard')
-
-    users = CustomUser.objects.exclude(role='superadmin')  # Hide other superadmins
-    return render(request, 'users/user_list.html', {'users': users})
-
-@login_required
-def get_rooms(request):
-    hostel_id = request.GET.get('hostel_id')
-    if hostel_id:
-        rooms = Room.objects.filter(hostel_id=hostel_id).values('id', 'number')
-        return JsonResponse({'rooms': list(rooms)})
-    return JsonResponse({'rooms': []})
-
-@login_required
-def update_user(request, user_id):
-    if request.user.role not in ['superadmin', 'admin']:
-        messages.error(request, "You are not authorized to update user details.")
-        return redirect('dashboard')
-
-    user = get_object_or_404(CustomUser, id=user_id)
-    
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST, instance=user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "User updated successfully!")
-            return redirect('user_list')
-    else:
-        form = UserRegistrationForm(instance=user)
-    
-    return render(request, 'users/update_user.html', {'form': form, 'user': user})
-
 def user_login(request):
     if request.method == 'POST':
         matric_id = request.POST['matric_id']
@@ -104,3 +22,124 @@ def user_login(request):
         else:
             messages.error(request, "Invalid Matric ID or password.")
     return render(request, 'users/login.html')
+
+@login_required
+def dashboard(request):
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to access this page.")
+        return redirect('home')
+    return render(request, 'dashboard.html')
+
+@login_required
+def manage_users(request):
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to manage users.")
+        return redirect('dashboard')
+
+    role_filter = request.GET.get('role', 'all')
+    users = CustomUser.objects.exclude(role='superadmin') if role_filter == 'all' else CustomUser.objects.filter(role=role_filter)
+
+    for user in users:
+        room = Room.objects.filter(resident=user).first()
+        user.room_details = f"{room.hostel.block}, Room {room.number}" if room else "No room assigned"
+
+    return render(request, 'users/manage_users.html', {'users': users, 'role_filter': role_filter})
+
+@login_required
+def create_user(request):
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to create users.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            # Save the user first without committing
+            user = form.save(commit=False)
+            user.save()  # Save the user instance to the database
+
+            # Handle the room assignment
+            room_id = request.POST.get('room')
+            if room_id:
+                room = Room.objects.get(id=room_id)
+                room.resident = user  # Assign the user to the room
+                room.save()  # Save the room instance
+
+            messages.success(request, "User created successfully!")
+            return redirect('manage_users')
+    else:
+        form = UserRegistrationForm()
+
+    return render(request, 'users/create_user.html', {'form': form})
+
+def generate_matric_id(request):
+    role = request.GET.get('role', 'student')
+    year = datetime.now().year % 100
+
+    prefix_mapping = {'admin': 'A', 'staff': 'UC', 'lecturer': 'L', 'student': 'S'}
+    prefix = prefix_mapping.get(role, 'S')
+
+    last_user = CustomUser.objects.filter(role=role).order_by('-matric_id').first()
+    last_number = int(last_user.matric_id[3:]) + 1 if last_user and last_user.matric_id else 1
+
+    matric_id = f"{year}{last_number:04d}"
+    return JsonResponse({'matric_id': matric_id})
+
+@login_required
+def update_user(request, user_id):
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to update user details.")
+        return redirect('dashboard')
+
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST, instance=user)
+        if form.is_valid():
+            user = form.save(commit=False)
+
+            room_id = request.POST.get('room')
+            if room_id:
+                try:
+                    room = Room.objects.get(id=room_id)
+                    room.resident = user
+                    room.save()
+                except Room.DoesNotExist:
+                    messages.error(request, "Selected room does not exist.")
+                    return redirect('update_user', user_id=user.id)
+
+            user.save()
+            messages.success(request, "User updated successfully!")
+            return redirect('manage_users')
+    else:
+        form = UserRegistrationForm(instance=user)
+
+    return render(request, 'users/update_user.html', {'form': form, 'user': user})
+
+@login_required
+def delete_user(request, user_id):
+    if request.user.role not in ['superadmin', 'admin']:
+        messages.error(request, "You are not authorized to delete users.")
+        return redirect('dashboard')
+
+    user = get_object_or_404(CustomUser, id=user_id)
+
+    if user.role == 'superadmin':
+        messages.error(request, "Superadmins cannot be deleted.")
+        return redirect('manage_users')
+
+    room = Room.objects.filter(resident=user).first()
+    if room:
+        room.resident = None
+        room.save()
+
+    user.delete()
+    messages.success(request, "User deleted successfully.")
+    return redirect('manage_users')
+
+@login_required
+def get_rooms(request):
+    hostel_id = request.GET.get('hostel_id')
+    if hostel_id:
+        rooms = Room.objects.filter(hostel_id=hostel_id, resident=None).values('id', 'number')
+        return JsonResponse({'rooms': list(rooms)})
+    return JsonResponse({'rooms': []})

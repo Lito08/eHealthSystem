@@ -1,62 +1,100 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>Create User</h2>
-  <form method="post" id="userForm">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">Create User</button>
-  </form>
+<h2>Create User</h2>
+<form method="post" id="userForm">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="id_role">Role:</label>
+        {{ form.role }}
+    </div>
+    <div class="mb-3">
+        <label for="id_matric_id">Matric ID:</label>
+        {{ form.matric_id }}
+    </div>
+    <div class="mb-3">
+        <label for="id_email">Email:</label>
+        {{ form.email }}
+    </div>
+    <div class="mb-3">
+        <label for="id_full_name">Full Name:</label>
+        {{ form.full_name }}
+    </div>
+    <div class="mb-3">
+        <label for="id_phone_number">Phone Number:</label>
+        {{ form.phone_number }}
+    </div>
+    <div class="mb-3">
+        <label for="id_hostel_block">Hostel Block:</label>
+        {{ form.hostel_block }}
+    </div>
+    <div class="mb-3">
+        <label for="id_room">Room:</label>
+        {{ form.room }}
+    </div>
+    <div class="mb-3">
+        <label for="id_password1">Password:</label>
+        {{ form.password1 }}
+    </div>
+    <div class="mb-3">
+        <label for="id_password2">Confirm Password:</label>
+        {{ form.password2 }}
+    </div>
+    <button type="submit" class="btn btn-primary">Create User</button>
+</form>
 
-  <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Back to User List</a>
+<a href="{% url 'manage_users' %}" class="btn btn-secondary mt-3">Back to Manage Users</a>
 
-  <script>
-      document.addEventListener("DOMContentLoaded", function () {
-          var roleSelect = document.getElementById('id_role');
-          var matricField = document.getElementById('id_matric_id');
-          var emailField = document.getElementById('id_email');
-          var hostelSelect = document.getElementById('id_hostel_block');
-          var roomSelect = document.getElementById('id_room');
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const roleSelect = document.getElementById('id_role');
+        const matricField = document.getElementById('id_matric_id');
+        const emailField = document.getElementById('id_email');
+        const hostelSelect = document.getElementById('id_hostel_block');
+        const roomSelect = document.getElementById('id_room');
 
-          function updateMatricIDAndEmail() {
-              var role = roleSelect.value;
-              var prefixMapping = {
-                  'admin': 'A',
-                  'staff': 'UC',
-                  'lecturer': 'L',
-                  'student': 'S'
-              };
-              var prefix = prefixMapping[role] || 'S';
+        function updateMatricIDAndEmail() {
+            const role = roleSelect.value;
+            const prefixMapping = {
+                'admin': 'A',
+                'staff': 'UC',
+                'lecturer': 'L',
+                'student': 'S'
+            };
+            const prefix = prefixMapping[role] || 'S';
 
-              fetch(`/users/generate-matric-id/?role=` + role)
-                  .then(response => response.json())
-                  .then(data => {
-                      var generatedMatricID = prefix + data.matric_id;
-                      matricField.value = generatedMatricID;
-                      emailField.value = generatedMatricID + '@' + role + '.mmu.edu.my';
-                  })
-                  .catch(error => console.error('Error fetching matric ID:', error));
-          }
+            fetch(`/users/generate-matric-id/?role=${role}`)
+                .then(response => response.json())
+                .then(data => {
+                    const generatedMatricID = prefix + data.matric_id;
+                    matricField.value = generatedMatricID;
+                    emailField.value = `${generatedMatricID}@${role}.mmu.edu.my`;
+                })
+                .catch(error => console.error('Error fetching matric ID:', error));
+        }
 
-          function updateRoomOptions() {
-              var hostelId = hostelSelect.value;
-              fetch(`/users/get-rooms/?hostel_id=` + hostelId)
-                  .then(response => response.json())
-                  .then(data => {
-                      roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
-                      data.rooms.forEach(room => {
-                          var option = new Option(room.number, room.id);
-                          roomSelect.add(option);
-                      });
-                  })
-                  .catch(error => console.error('Error fetching rooms:', error));
-          }
+        function updateRoomOptions() {
+            const hostelId = hostelSelect.value;
+            if (hostelId) {
+                fetch(`/users/get-rooms/?hostel_id=${hostelId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
+                        data.rooms.forEach(room => {
+                            const option = new Option(room.number, room.id);
+                            roomSelect.add(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching rooms:', error));
+            } else {
+                roomSelect.innerHTML = '<option value="">Select Room (Optional)</option>';
+            }
+        }
 
-          // Trigger the update on page load to initialize matric ID and email fields
-          updateMatricIDAndEmail();
-
-          roleSelect.addEventListener('change', updateMatricIDAndEmail);
-          hostelSelect.addEventListener('change', updateRoomOptions);
-      });
-  </script>
+        // Initialize fields on page load
+        updateMatricIDAndEmail();
+        hostelSelect.addEventListener('change', updateRoomOptions);
+        roleSelect.addEventListener('change', updateMatricIDAndEmail);
+    });
+</script>
 {% endblock %}

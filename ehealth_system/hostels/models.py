@@ -22,9 +22,19 @@ class Hostel(models.Model):
         return self.name
 
 class Room(models.Model):
-    hostel = models.ForeignKey(Hostel, on_delete=models.CASCADE, related_name="rooms")
+    hostel = models.ForeignKey(
+        Hostel,
+        on_delete=models.CASCADE,
+        related_name="rooms"  # Link rooms to their respective hostel
+    )
     number = models.CharField(max_length=20, unique=True)
-    resident = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    resident = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rooms_assigned"  # Unique related_name for CustomUser reverse relation
+    )
 
     @property
     def is_occupied(self):

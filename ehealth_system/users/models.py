@@ -50,7 +50,6 @@ class CustomUser(AbstractUser):
     matric_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    hostel_block = models.CharField(max_length=50, blank=True, null=True)
 
     USERNAME_FIELD = 'matric_id'
     REQUIRED_FIELDS = ['email']
