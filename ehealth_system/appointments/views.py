@@ -152,3 +152,16 @@ def report_health(request):
 
     return render(request, 'appointments/report_health.html', {'ongoing_appointment': ongoing_appointment})
 
+@login_required
+def manage_appointments(request):
+    if request.user.role not in ['admin', 'superadmin']:
+        messages.error(request, "You are not authorized to manage appointments.")
+        return redirect('home')
+
+    all_appointments = Appointment.objects.all().order_by('appointment_date', 'appointment_time')
+    ongoing_appointments = all_appointments.filter(status='Scheduled')
+
+    return render(request, 'appointments/manage_appointments.html', {
+        'all_appointments': all_appointments,
+        'ongoing_appointments': ongoing_appointments
+    })

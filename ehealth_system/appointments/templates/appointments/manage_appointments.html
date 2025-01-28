@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Manage Appointments{% endblock %}
+
+{% block content %}
+<h2 class="text-center">Manage Appointments</h2>
+
+<div class="mb-5">
+    <h4>Ongoing Appointments</h4>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Resident</th>
+                <th>Clinic</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in ongoing_appointments %}
+                <tr>
+                    <td>{{ appointment.resident.matric_id }}</td>
+                    <td>{{ appointment.clinic.name }}</td>
+                    <td>{{ appointment.appointment_date }}</td>
+                    <td>{{ appointment.appointment_time }}</td>
+                    <td>{{ appointment.get_status_display }}</td>
+                    <td>
+                        <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm">Cancel</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No ongoing appointments.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div>
+    <h4>All Appointments</h4>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Resident</th>
+                <th>Clinic</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in all_appointments %}
+                <tr>
+                    <td>{{ appointment.resident.matric_id }}</td>
+                    <td>{{ appointment.clinic.name }}</td>
+                    <td>{{ appointment.appointment_date }}</td>
+                    <td>{{ appointment.appointment_time }}</td>
+                    <td>{{ appointment.get_status_display }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No appointments found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
