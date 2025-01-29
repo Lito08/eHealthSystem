@@ -7,4 +7,6 @@ urlpatterns = [
     path('edit/<int:hotspot_id>/', views.edit_hotspot, name='edit_hotspot'),
     path('delete/<int:hotspot_id>/', views.delete_hotspot, name='delete_hotspot'),
     path('view/', views.view_hotspots, name='view_hotspots'),
+    path('heatmap/', views.heatmap_view, name='heatmap_view'),
+    path('get-hotspots/', views.get_hotspots, name='get_hotspots'),
 ]

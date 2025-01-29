@@ -1,28 +1,45 @@
 {% extends 'base.html' %}
+
 {% block title %}COVID-19 Hotspot Heatmap{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h2 class="text-center">Hotspot Heatmap</h2>
+    <h2 class="text-center">COVID-19 Hotspot Heatmap</h2>
     <div id="map" style="height: 500px;"></div>
 </div>
 
-<!-- Leaflet.js for Maps -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<!-- Include Leaflet.js and Heatmap Plugin -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        var map = L.map('map').setView([3.140853, 101.693207], 10); // Center to Kuala Lumpur (Example)
-        
+        var map = L.map('map').setView([3.1390, 101.6869], 10);  // Center on Malaysia
+
+        // Load map tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        {% for hotspot in hotspots %}
-            var marker = L.marker([{{ hotspot.latitude }}, {{ hotspot.longitude }}]).addTo(map)
-                .bindPopup("<b>{{ hotspot.location_name }}</b><br>Infected: {{ hotspot.infected_count }}<br>Recovered: {{ hotspot.recovered_count }}");
-        {% endfor %}
+        // Fetch hotspot data from backend
+        fetch("{% url 'get_hotspots' %}")
+            .then(response => response.json())
+            .then(data => {
+                var heatData = data.hotspots.map(hotspot => [
+                    hotspot.latitude, 
+                    hotspot.longitude, 
+                    hotspot.infected_count  // Heat intensity based on infected count
+                ]);
+
+                // Add heatmap layer
+                L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 10
+                }).addTo(map);
+            })
+            .catch(error => console.error("Error loading heatmap:", error));
     });
 </script>
 {% endblock %}

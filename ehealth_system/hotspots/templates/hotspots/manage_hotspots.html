@@ -4,8 +4,13 @@
 {% block content %}
 <h2 class="text-center">Manage Hotspots</h2>
 
-<a href="{% url 'add_hotspot' %}" class="btn btn-success mb-3">Add Hotspot</a>
+<!-- Buttons -->
+<div class="mb-3 text-end">
+    <a href="{% url 'add_hotspot' %}" class="btn btn-success">Add Hotspot</a>
+    <a href="{% url 'heatmap_view' %}" class="btn btn-primary">View Heatmap</a>
+</div>
 
+<!-- Hotspots Table -->
 <table class="table table-striped">
     <thead class="table-dark">
         <tr>
@@ -18,7 +23,7 @@
     <tbody>
         {% for hotspot in hotspots %}
             <tr>
-                <td>{{ hotspot.location_name }}</td>
+                <td>{{ hotspot.name }}</td>  <!-- Changed from location_name to name -->
                 <td>{{ hotspot.infected_count }}</td>
                 <td>{{ hotspot.recovered_count }}</td>
                 <td>
