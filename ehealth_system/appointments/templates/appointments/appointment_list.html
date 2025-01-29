@@ -29,7 +29,8 @@
                                 {% if user.role == 'admin' or user.role == 'superadmin' %}
                                 <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-warning btn-sm">Edit</a>
                                 {% endif %}
-                                <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm">Cancel</a>                            
+                                <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Are you sure you want to cancel this appointment?');">Cancel</a>                           
                               </td>
                           </tr>
                       {% endfor %}
