@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Add COVID-19 Hotspot{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">Add Hotspot</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Location Name</label>
+            {{ form.location_name }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Infected Count</label>
+            {{ form.infected_count }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Recovered Count</label>
+            {{ form.recovered_count }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Latitude</label>
+            {{ form.latitude }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Longitude</label>
+            {{ form.longitude }}
+        </div>
+        <button type="submit" class="btn btn-primary">Add Hotspot</button>
+    </form>
+    <a href="{% url 'manage_hotspots' %}" class="btn btn-secondary mt-3">Back to Manage Hotspots</a>
+</div>
+{% endblock %}

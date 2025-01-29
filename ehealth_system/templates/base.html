@@ -23,10 +23,12 @@
                             <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}">Manage Hostels</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}">Manage Appointments</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}">Manage Announcements</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}">Manage Hotspots</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}">Announcements</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}">My Appointments</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}">Report Health Risk</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'view_hotspots' %}">View Hotspots</a></li>
                         {% endif %}
                         <li class="nav-item">
                             <form action="{% url 'logout' %}" method="post" style="display:inline;">

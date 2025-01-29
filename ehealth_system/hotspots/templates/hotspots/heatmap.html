@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}COVID-19 Hotspot Heatmap{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">Hotspot Heatmap</h2>
+    <div id="map" style="height: 500px;"></div>
+</div>
+
+<!-- Leaflet.js for Maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var map = L.map('map').setView([3.140853, 101.693207], 10); // Center to Kuala Lumpur (Example)
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        {% for hotspot in hotspots %}
+            var marker = L.marker([{{ hotspot.latitude }}, {{ hotspot.longitude }}]).addTo(map)
+                .bindPopup("<b>{{ hotspot.location_name }}</b><br>Infected: {{ hotspot.infected_count }}<br>Recovered: {{ hotspot.recovered_count }}");
+        {% endfor %}
+    });
+</script>
+{% endblock %}

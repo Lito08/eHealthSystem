@@ -11,5 +11,6 @@ urlpatterns = [
     path('appointments/', include('appointments.urls')),
     path('hostels/', include('hostels.urls')),
     path('dashboard/', login_required(dashboard), name='dashboard'),
-    path('announcements/', include('announcements.urls'))
+    path('announcements/', include('announcements.urls')),
+    path('hotspots/', include('hotspots.urls')),
 ]
