@@ -37,7 +37,17 @@ def manage_users(request):
         return redirect('dashboard')
 
     role_filter = request.GET.get('role', 'all')
-    users = CustomUser.objects.exclude(role='superadmin') if role_filter == 'all' else CustomUser.objects.filter(role=role_filter)
+
+    # Superadmin can see all users including admins
+    if request.user.role == 'superadmin':
+        users = CustomUser.objects.exclude(role='superadmin') if role_filter == 'all' else CustomUser.objects.filter(role=role_filter)
+    
+    # Admin cannot see superadmins or other admins
+    else:  # This means the logged-in user is an admin
+        if role_filter == 'all':
+            users = CustomUser.objects.exclude(role__in=['superadmin', 'admin'])
+        else:
+            users = CustomUser.objects.filter(role=role_filter).exclude(role='admin')
 
     for user in users:
         room = Room.objects.filter(resident=user).first()

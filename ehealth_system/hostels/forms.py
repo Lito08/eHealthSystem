@@ -15,16 +15,24 @@ class RoomForm(forms.ModelForm):
         label="Assigned Resident",
     )
 
+    clear_resident = forms.BooleanField(
+        required=False, label="Clear Assigned Resident", initial=False
+    )
+
     class Meta:
         model = Room
         fields = ['resident']
 
     def __init__(self, *args, **kwargs):
         super(RoomForm, self).__init__(*args, **kwargs)
+
+        # Check if editing an existing room
         if self.instance and self.instance.resident:
             self.fields['resident'].queryset = CustomUser.objects.filter(
-                models.Q(role='student', rooms_assigned=None) | models.Q(id=self.instance.resident.id)
+                models.Q(role='student') & 
+                (models.Q(rooms_assigned=None) | models.Q(id=self.instance.resident.id))
             )
+            self.fields['resident'].initial = self.instance.resident
         else:
             self.fields['resident'].queryset = CustomUser.objects.filter(role='student', rooms_assigned=None)
 
@@ -32,15 +40,18 @@ class RoomForm(forms.ModelForm):
 
     def save(self, commit=True):
         room = super(RoomForm, self).save(commit=False)
-        if self.cleaned_data.get('resident'):
-            room.is_occupied = True
+
+        # Handle clearing the assigned resident
+        if self.cleaned_data.get('clear_resident'):
+            room.resident = None
         else:
-            room.is_occupied = False
+            room.resident = self.cleaned_data.get('resident')
 
         if commit:
             room.save()
+
+            # If assigning a resident, clear their previous room assignment
             if self.cleaned_data.get('resident'):
-                # Clear previous room assignments for this resident
                 self.cleaned_data['resident'].rooms_assigned.clear()
                 self.cleaned_data['resident'].rooms_assigned.add(room)
 
