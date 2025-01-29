@@ -1,5 +1,5 @@
 from django import forms
-from django.db import models
+from django.core.exceptions import ValidationError
 from .models import Hostel, Room
 from users.models import CustomUser
 
@@ -7,6 +7,22 @@ class HostelForm(forms.ModelForm):
     class Meta:
         model = Hostel
         fields = ['name', 'block', 'levels', 'rooms_per_level']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        block = cleaned_data.get('block')
+
+        # Check if hostel with the same name and block already exists
+        existing_hostel = Hostel.objects.filter(name=name, block=block)
+
+        if self.instance.pk:
+            existing_hostel = existing_hostel.exclude(pk=self.instance.pk)
+
+        if existing_hostel.exists():
+            raise ValidationError("A hostel with the same name and block already exists.")
+
+        return cleaned_data
 
 class RoomForm(forms.ModelForm):
     resident = forms.ModelChoiceField(
