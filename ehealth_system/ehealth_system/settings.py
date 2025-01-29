@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'users',
     'appointments',
     'hostels',
+    'announcements',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -22,7 +22,9 @@
                             <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}">Manage Users</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}">Manage Hostels</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}">Manage Appointments</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}">Manage Announcements</a></li>
                         {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}">Announcements</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}">My Appointments</a></li>
                             <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}">Report Health Risk</a></li>
                         {% endif %}
