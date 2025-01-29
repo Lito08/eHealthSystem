@@ -72,7 +72,6 @@ def appointment_list(request):
 def edit_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
 
-    # Restrict residents from editing appointments
     if request.user.role not in ['admin', 'superadmin']:
         messages.error(request, "You are not authorized to edit appointments.")
         return redirect('appointment_list')
@@ -80,8 +79,19 @@ def edit_appointment(request, appointment_id):
     # Generate 15-minute time slots
     time_slots = [
         (datetime.combine(datetime.today(), time(8, 0)) + timedelta(minutes=15 * i)).time()
-        for i in range(48)  # 48 slots between 8:00 AM and 8:00 PM
+        for i in range(48)  # 48 slots from 8:00 AM to 8:00 PM
     ]
+
+    # Get booked times (excluding the current appointment being edited)
+    booked_times = set(
+        Appointment.objects.filter(
+            clinic=appointment.clinic,
+            appointment_date=appointment.appointment_date
+        ).exclude(id=appointment.id).values_list('appointment_time', flat=True)
+    )
+
+    # Ensure available_time_slots is actually used
+    available_time_slots = [slot for slot in time_slots if slot not in booked_times]
 
     if request.method == 'POST':
         appointment_date = request.POST.get('appointment_date')
@@ -97,39 +107,43 @@ def edit_appointment(request, appointment_id):
             messages.error(request, "Invalid time format. Please select a valid time.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
-        # Validate time selection
-        if appointment_time_obj not in time_slots:
-            messages.error(request, "Invalid time selected. Please choose a valid 15-minute slot.")
-            return redirect('edit_appointment', appointment_id=appointment_id)
-
-        # Check for overlapping appointments
-        overlapping_appointment = Appointment.objects.filter(
-            clinic=appointment.clinic,
-            appointment_date=appointment_date,
-            appointment_time=appointment_time_obj,
-        ).exclude(id=appointment.id).exists()
-
-        if overlapping_appointment:
+        if appointment_time_obj in booked_times:
             messages.error(request, "The selected timeslot is already taken. Please choose another time.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
+        # Update the appointment
         appointment.appointment_date = appointment_date
         appointment.appointment_time = appointment_time_obj
         appointment.save()
+
         messages.success(request, "Appointment updated successfully.")
         return redirect('manage_appointments')
 
+    # Ensure the variable is actually returned
     return render(request, 'appointments/edit_appointment.html', {
         'appointment': appointment,
-        'time_slots': time_slots,
+        'time_slots': available_time_slots  # Ensuring it's passed
     })
+
 
 @login_required
 def cancel_appointment(request, appointment_id):
-    appointment = get_object_or_404(Appointment, appointment_id=appointment_id, resident=request.user)
-    appointment.delete()
-    messages.success(request, "Appointment canceled successfully.")
-    return redirect('appointment_list')
+    appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+
+    # Allow resident to cancel their own appointment or admin to cancel any appointment
+    if request.user == appointment.resident or request.user.role in ['admin', 'superadmin']:
+        appointment.delete()
+        messages.success(request, "Appointment canceled successfully.")
+    else:
+        messages.error(request, "You are not authorized to cancel this appointment.")
+        return redirect('home')
+
+    # Redirect based on user role
+    if request.user.role in ['admin', 'superadmin']:
+        return redirect('manage_appointments')  # Admin stays on manage page
+    else:
+        return redirect('appointment_list')  # Regular users go back to their list
+
 
 @login_required
 def confirm_appointment(request, appointment_id):
