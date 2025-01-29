@@ -17,15 +17,16 @@
             </div>          
 
             <div class="mb-3">
-              <label for="appointment_time" class="form-label">Appointment Time:</label>
-              <select id="appointment_time" name="appointment_time" class="form-select" required>
-                  {% for time in time_slots %}
-                      <option value="{{ time|time:'H:i' }}" {% if time == appointment.appointment_time %}selected{% endif %}>
-                          {{ time|time:'H:i' }}
-                      </option>
-                  {% endfor %}
-              </select>
-            </div>          
+                <label for="appointment_time" class="form-label">Appointment Time:</label>
+                <select id="appointment_time" name="appointment_time" class="form-select" required>
+                    {% for time in time_slots %}
+                        <option value="{{ time|time:'H:i' }}" {% if time == appointment.appointment_time %}selected{% endif %}>
+                            {{ time|time:'H:i' }}
+                        </option>
+                    {% endfor %}
+                </select>
+              </div>
+                        
 
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-success">Update Appointment</button>
