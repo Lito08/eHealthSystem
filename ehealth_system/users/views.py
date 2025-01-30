@@ -113,6 +113,7 @@ def update_user(request, user_id):
 
     if request.method == 'POST':
         form = UserUpdateForm(request.POST, instance=user)
+        form.fields.pop("role", None)
         if form.is_valid():
             user = form.save(commit=False)
 
