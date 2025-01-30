@@ -144,13 +144,6 @@ def cancel_appointment(request, appointment_id):
         return redirect('appointment_list')  # Regular users go back to their list
 
 @login_required
-def confirm_appointment(request, appointment_id):
-    appointment = get_object_or_404(Appointment, appointment_id=appointment_id, resident=request.user)
-    appointment.confirm_appointment()
-    messages.success(request, "Appointment confirmed successfully.")
-    return redirect('appointment_list')
-
-@login_required
 def report_health(request):
     clinic = Clinic.objects.first()
     ongoing_appointment = Appointment.objects.filter(
@@ -218,3 +211,24 @@ def manage_appointments(request):
         'all_appointments': all_appointments,
         'ongoing_appointments': ongoing_appointments
     })
+
+@login_required
+def update_appointment_result(request, appointment_id):
+    """Allows admins to mark appointments as completed with a result."""
+    if request.user.role not in ['admin', 'superadmin']:
+        messages.error(request, "You are not authorized to update appointment results.")
+        return redirect('manage_appointments')
+
+    appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+
+    if request.method == 'POST':
+        result = request.POST.get('result')
+        if result not in ['Positive', 'Negative']:
+            messages.error(request, "Invalid result selection.")
+            return redirect('manage_appointments')
+
+        appointment.mark_completed(result)
+        messages.success(request, "Appointment result updated successfully.")
+        return redirect('manage_appointments')
+
+    return render(request, 'appointments/update_result.html', {'appointment': appointment})

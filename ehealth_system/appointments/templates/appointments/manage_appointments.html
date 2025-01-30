@@ -14,6 +14,7 @@
                 <th>Date</th>
                 <th>Time</th>
                 <th>Status</th>
+                <th>Result</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -24,17 +25,30 @@
                     <td>{{ appointment.clinic.name }}</td>
                     <td>{{ appointment.appointment_date }}</td>
                     <td>{{ appointment.appointment_time }}</td>
-                    <td>{{ appointment.get_status_display }}</td>
+                    <td>
+                        <span class="badge {% if appointment.status == 'Scheduled' %}bg-warning{% elif appointment.status == 'Completed' %}bg-success{% elif appointment.status == 'Cancelled' %}bg-danger{% else %}bg-info{% endif %}">
+                            {{ appointment.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if appointment.result %}
+                            {{ appointment.result }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-warning btn-sm">Edit</a>
                         <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm"
                             onclick="return confirm('Are you sure you want to cancel this appointment?');">Cancel</a>
-
+                        {% if appointment.status == 'Scheduled' %}
+                            <a href="{% url 'update_appointment_result' appointment.appointment_id %}" class="btn btn-primary btn-sm">Update Result</a>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center">No ongoing appointments.</td>
+                    <td colspan="7" class="text-center">No ongoing appointments.</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -51,6 +65,7 @@
                 <th>Date</th>
                 <th>Time</th>
                 <th>Status</th>
+                <th>Result</th>
             </tr>
         </thead>
         <tbody>
@@ -60,11 +75,22 @@
                     <td>{{ appointment.clinic.name }}</td>
                     <td>{{ appointment.appointment_date }}</td>
                     <td>{{ appointment.appointment_time }}</td>
-                    <td>{{ appointment.get_status_display }}</td>
+                    <td>
+                        <span class="badge {% if appointment.status == 'Scheduled' %}bg-warning{% elif appointment.status == 'Completed' %}bg-success{% elif appointment.status == 'Cancelled' %}bg-danger{% else %}bg-info{% endif %}">
+                            {{ appointment.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if appointment.result %}
+                            {{ appointment.result }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">No appointments found.</td>
+                    <td colspan="6" class="text-center">No appointments found.</td>
                 </tr>
             {% endfor %}
         </tbody>

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Appointment Result{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Update Appointment Result</h2>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Resident: {{ appointment.resident.full_name }}</h5>
+            <p><strong>Matric ID:</strong> {{ appointment.resident.matric_id }}</p>
+            <p><strong>Clinic:</strong> {{ appointment.clinic.name }}</p>
+            <p><strong>Date:</strong> {{ appointment.appointment_date }}</p>
+            <p><strong>Time:</strong> {{ appointment.appointment_time }}</p>
+            <p><strong>Current Status:</strong> {{ appointment.status }}</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <label for="result">Result:</label>
+                <select name="result" class="form-control">
+                    <option value="Positive">Positive</option>
+                    <option value="Negative">Negative</option>
+                </select>
+                <button type="submit" class="btn btn-success mt-3">Update Result</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
