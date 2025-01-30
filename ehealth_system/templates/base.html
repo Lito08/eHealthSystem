@@ -22,7 +22,6 @@
             transition: 0.3s;
             overflow: hidden;
         }
-        
         .main-content {
             margin-left: 260px;
             padding: 20px;
@@ -30,37 +29,48 @@
             width: 100%;
             transition: 0.3s;
         }
-        
         .sidebar .nav-link {
             color: #333;
             display: flex;
             align-items: center;
         }
-        
         .sidebar .nav-link i {
             margin-right: 10px;
         }
-        
-        /* Sidebar Collapsed */
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .profile-dropdown {
+            margin-left: auto;
+        }
         .sidebar-hidden {
-            width: 80px; /* Keeps the icon visible */
-            padding: 0;
+            width: 70px;
         }
-        
-        .sidebar-hidden .sidebar-text {
-            display: none; /* Hide text, only icons stay */
+        .sidebar-hidden .nav-link span {
+            display: none;
         }
-        
-        .sidebar-hidden #sidebar-title {
-            font-size: 20px; /* Keep a compact logo */
-            text-align: center;
-        }
-        
         .content-expanded {
-            margin-left: 80px;
-        }        
-        .hidden-sidebar {
-            display: none !important;
+            margin-left: 70px;
+        }
+        .sidebar .nav-link {
+            position: relative;
+        }
+        .sidebar .nav-link[data-bs-toggle="tooltip"]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            display: none;
+        }
+        .sidebar .nav-link:hover::after {
+            display: block;
         }
     </style>
 </head>
@@ -68,37 +78,34 @@
 
     <!-- Sidebar -->
     <div class="sidebar p-3" id="sidebar">
-        <h4 class="text-center" id="sidebar-title">eHealth System</h4>
+        <h4 class="text-center sidebar-logo" id="sidebarLogo">eHealth System</h4>
         <ul class="nav flex-column">
             {% if user.is_authenticated %}
                 {% if user.role == 'superadmin' or user.role == 'admin' %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}"><i class="bi bi-people"></i> <span class="sidebar-text">Manage Users</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}"><i class="bi bi-building"></i> <span class="sidebar-text">Manage Hostels</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}"><i class="bi bi-calendar"></i> <span class="sidebar-text">Manage Appointments</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}"><i class="bi bi-megaphone"></i> <span class="sidebar-text">Manage Announcements</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}"><i class="bi bi-geo-alt"></i> <span class="sidebar-text">Manage Hotspots</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}" data-bs-toggle="tooltip" title="Dashboard"><i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}" data-bs-toggle="tooltip" title="Manage Users"><i class="bi bi-people"></i> <span class="sidebar-text">Manage Users</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}" data-bs-toggle="tooltip" title="Manage Hostels"><i class="bi bi-building"></i> <span class="sidebar-text">Manage Hostels</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}" data-bs-toggle="tooltip" title="Manage Appointments"><i class="bi bi-calendar"></i> <span class="sidebar-text">Manage Appointments</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}" data-bs-toggle="tooltip" title="Manage Announcements"><i class="bi bi-megaphone"></i> <span class="sidebar-text">Manage Announcements</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}" data-bs-toggle="tooltip" title="Manage Hotspots"><i class="bi bi-geo-alt"></i> <span class="sidebar-text">Manage Hotspots</span></a></li>
                 {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="bi bi-bar-chart"></i> <span class="sidebar-text">Infected Status Counter</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}"><i class="bi bi-megaphone"></i> <span class="sidebar-text">Announcements</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}"><i class="bi bi-clipboard-pulse"></i> <span class="sidebar-text">Report Health Risk</span></a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}"><i class="bi bi-calendar"></i> <span class="sidebar-text">Appointments</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}" data-bs-toggle="tooltip" title="Infected Status Counter"><i class="bi bi-bar-chart"></i> <span class="sidebar-text">Infected Status</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}" data-bs-toggle="tooltip" title="Announcements"><i class="bi bi-megaphone"></i> <span class="sidebar-text">Announcements</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}" data-bs-toggle="tooltip" title="Report Health Risk"><i class="bi bi-clipboard-pulse"></i> <span class="sidebar-text">Report Health Risk</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}" data-bs-toggle="tooltip" title="Appointments"><i class="bi bi-calendar"></i> <span class="sidebar-text">Appointments</span></a></li>
                 {% endif %}
-                <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-file-earmark-text"></i> <span class="sidebar-text">Terms & Conditions</span></a></li>
+                <li class="nav-item"><a class="nav-link" href="#" data-bs-toggle="tooltip" title="Terms & Conditions"><i class="bi bi-file-earmark-text"></i> <span class="sidebar-text">Terms & Conditions</span></a></li>
             {% endif %}
         </ul>
     </div>
 
-
     <!-- Main Content -->
-    <div class="main-content {% if request.path == '/login/' %}content-expanded{% endif %}" id="mainContent">
+    <div class="main-content" id="mainContent">
         <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container-fluid">
-                {% if user.is_authenticated %}
-                    <button class="btn btn-outline-primary" id="sidebarToggle"><i class="bi bi-list"></i></button>
-                {% endif %}
-                <h4 class="ms-3">eHealth System</h4>  <!-- Show eHealth System in Navbar when Sidebar is hidden -->
+                <button class="btn btn-outline-primary" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="navbar-brand d-inline-block mx-3" id="navbarLogo">eHealth System</h4>
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav ms-auto profile-dropdown">
                         {% if user.is_authenticated %}
@@ -133,18 +140,29 @@
         document.getElementById("sidebarToggle").addEventListener("click", function() {
             let sidebar = document.getElementById("sidebar");
             let mainContent = document.getElementById("mainContent");
-            let sidebarTitle = document.getElementById("sidebar-title");
-        
+            let sidebarLogo = document.getElementById("sidebarLogo");
+            let sidebarText = document.querySelectorAll(".sidebar-text");
+
             if (sidebar.classList.contains("sidebar-hidden")) {
                 sidebar.classList.remove("sidebar-hidden");
                 mainContent.classList.remove("content-expanded");
-                sidebarTitle.textContent = "eHealth System"; // Full name when expanded
+                sidebarLogo.innerText = "eHealth System";
+                sidebarText.forEach(text => text.style.display = "inline");
             } else {
                 sidebar.classList.add("sidebar-hidden");
                 mainContent.classList.add("content-expanded");
-                sidebarTitle.textContent = "EHS"; // Short name when collapsed
+                sidebarLogo.innerText = "EHS";
+                sidebarText.forEach(text => text.style.display = "none");
             }
-        });        
+        });
+
+        // Enable Bootstrap Tooltips
+        document.addEventListener("DOMContentLoaded", function() {
+            let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
     </script>
 </body>
 </html>
