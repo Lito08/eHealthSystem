@@ -37,9 +37,10 @@ class Room(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="rooms_assigned"
+        related_name="assigned_room"
     )
 
+    @property
     def is_occupied(self):
         return self.resident is not None
 
@@ -54,7 +55,7 @@ class Room(models.Model):
         return Room.objects.filter(hostel__is_infected_hostel=False, resident__isnull=True).first()
 
     def __str__(self):
-        return f"{self.hostel.name} - {self.number} ({'Occupied' if self.is_occupied() else 'Available'})"
+        return f"{self.hostel.name} - {self.number} ({'Occupied' if self.is_occupied else 'Available'})"
 
 
 class ResidentHealthStatus(models.Model):
@@ -69,7 +70,7 @@ class ResidentHealthStatus(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="previous_residents"
+        related_name="previously_assigned"
     )
     infected_since = models.DateField(null=True, blank=True)
 
@@ -81,7 +82,7 @@ class ResidentHealthStatus(models.Model):
 
     def recover_resident(self):
         """Moves the resident back to their original room after recovery."""
-        if self.original_room and not self.original_room.is_occupied():
+        if self.original_room and not self.original_room.is_occupied:
             self.original_room.resident = self.resident
             self.original_room.save()
 

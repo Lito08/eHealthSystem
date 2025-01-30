@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Appointment, Clinic
+from users.models import CustomUser
+from hostels.models import Hostel, Room, ResidentHealthStatus
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import datetime, time, timedelta
@@ -247,28 +249,6 @@ def report_health(request):
         'recent_appointment': recent_appointment
     })
 
-def relocate_resident_to_quarantine(resident):
-    """Relocate infected residents to an available quarantine room."""
-    infected_hostel = Hostel.objects.filter(is_infected_hostel=True).first()
-
-    if not infected_hostel:
-        messages.warning(None, "No infected hostel available. Please assign manually.")
-        return
-
-    available_room = Room.objects.filter(hostel=infected_hostel, resident__isnull=True).first()
-
-    if available_room:
-        # Save original room before relocating
-        resident.original_room = resident.rooms_assigned.first()
-        resident.save()
-
-        # Relocate resident
-        available_room.resident = resident
-        available_room.save()
-        messages.success(None, f"{resident.full_name} has been relocated to quarantine.")
-    else:
-        messages.warning(None, "No available quarantine rooms.")
-
 @login_required
 def manage_appointments(request):
     if request.user.role not in ['admin', 'superadmin']:
@@ -298,13 +278,12 @@ def update_appointment_result(request, appointment_id):
             messages.error(request, "Invalid result selection.")
             return redirect('manage_appointments')
 
-        # Mark appointment as completed and update result
         appointment.result = result
-        appointment.status = "Completed"
+        appointment.status = 'Completed'
         appointment.save()
 
-        # If result is positive, relocate the resident to an infected hostel
-        if result == "Positive":
+        # Only residents (users with assigned rooms) should be quarantined
+        if result == 'Positive' and appointment.resident.rooms_assigned.exists():
             relocate_resident_to_quarantine(appointment.resident)
 
         messages.success(request, "Appointment result updated successfully.")
@@ -312,25 +291,72 @@ def update_appointment_result(request, appointment_id):
 
     return render(request, 'appointments/update_result.html', {'appointment': appointment})
 
+def relocate_resident_to_quarantine(resident):
+    """
+    Relocates infected residents to an available quarantine room in an infected hostel.
+    If no infected hostel is available, an admin must assign them manually.
+    """
+    if not resident.rooms_assigned.exists():
+        messages.warning(None, f"{resident.full_name} is not a resident and will not be quarantined.")
+        return
+
+    infected_hostel = Hostel.objects.filter(is_infected_hostel=True).first()
+    if not infected_hostel:
+        messages.warning(None, "No infected hostel available. Please assign manually.")
+        return
+
+    available_room = Room.objects.filter(hostel=infected_hostel, resident__isnull=True).first()
+    if available_room:
+        # Save original room before relocating
+        health_status, created = ResidentHealthStatus.objects.get_or_create(resident=resident)
+        health_status.original_room = resident.rooms_assigned.first()
+        health_status.infected_since = now().date()
+        health_status.save()
+
+        # Move resident to quarantine
+        resident.rooms_assigned.first().resident = None  # Vacate old room
+        resident.rooms_assigned.first().save()
+
+        resident.rooms_assigned.set([available_room])  # Assign new quarantine room
+        resident.infected_status = "infected"
+        resident.save()
+
+        available_room.resident = resident
+        available_room.save()
+
+        messages.success(None, f"{resident.full_name} has been relocated to quarantine in {infected_hostel.name}.")
+    else:
+        messages.warning(None, "No available quarantine rooms.")
+
 def mark_recovered():
-    """Automatically changes the infected tag to recovered after 14 days."""
+    """
+    Automatically marks infected residents as recovered after 14 days and moves them back to their original room.
+    """
     two_weeks_ago = now().date() - timedelta(days=14)
 
     # Get all residents with a positive test result older than 14 days
     recovered_residents = CustomUser.objects.filter(
-        appointments__result='Positive',
-        appointments__appointment_date__lte=two_weeks_ago
+        infected_status="infected",
+        health_status__infected_since__lte=two_weeks_ago
     ).distinct()
 
     for resident in recovered_residents:
-        if resident.original_room:
+        health_status = resident.health_status
+
+        if health_status.original_room and not health_status.original_room.is_occupied():
             # Move back to the original room
-            original_room = resident.original_room
+            original_room = health_status.original_room
             original_room.resident = resident
             original_room.save()
 
-            # Reset resident's quarantine flag
-            resident.original_room = None
+            # Reset resident's health status
+            health_status.original_room = None
+            health_status.infected_since = None
+            health_status.save()
+
+            resident.infected_status = "recovered"
             resident.save()
 
             messages.success(None, f"{resident.full_name} has recovered and returned to their original room.")
+        else:
+            messages.warning(None, f"{resident.full_name} cannot be relocated yet. Their original room is occupied.")

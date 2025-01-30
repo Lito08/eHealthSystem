@@ -51,12 +51,17 @@ class CustomUser(AbstractUser):
     matric_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
-    infected_status = models.CharField(max_length=20, choices=[
-        ('healthy', 'Healthy'),
-        ('infected', 'Infected'),
-        ('recovered', 'Recovered'),
-    ], default='healthy')
-    original_room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True, related_name="previous_resident")
+    infected_status = models.CharField(
+        max_length=20,
+        choices=[('healthy', 'Healthy'), ('infected', 'Infected'), ('recovered', 'Recovered')],
+        default='healthy'
+    )
+    original_room = models.ForeignKey(
+        Room, on_delete=models.SET_NULL, null=True, blank=True, related_name="original_room_residents"
+    )
+    room = models.ForeignKey(
+        Room, on_delete=models.SET_NULL, null=True, blank=True, related_name="current_residents"
+    )
 
     USERNAME_FIELD = 'matric_id'
     REQUIRED_FIELDS = ['email']
@@ -65,28 +70,38 @@ class CustomUser(AbstractUser):
 
     def mark_infected(self):
         """Moves an infected resident to a quarantine room."""
+        if not self.room:
+            return  # Prevent error if the resident has no assigned room
+
         quarantine_room = Room.find_available_quarantine_room()
         if quarantine_room:
             self.original_room = self.room  # Save their original room before relocation
+            self.room.resident = None  # Free the original room
+            self.room.save()
+
             self.room = quarantine_room
             self.infected_status = 'infected'
             self.save()
+
             quarantine_room.resident = self
             quarantine_room.save()
 
     def mark_recovered(self):
         """Moves a recovered resident back to their original room after 2 weeks."""
-        if self.original_room:
-            self.room.resident = None
+        if not self.original_room:
+            return  # Prevent error if the resident has no previous room
+
+        if self.room:
+            self.room.resident = None  # Free the quarantine room
             self.room.save()
 
-            self.room = self.original_room
-            self.infected_status = 'recovered'
-            self.save()
+        self.room = self.original_room
+        self.infected_status = 'recovered'
+        self.save()
 
-            self.original_room.resident = self
-            self.original_room.save()
-            self.original_room = None  # Reset after relocation
+        self.original_room.resident = self
+        self.original_room.save()
+        self.original_room = None  # Reset after relocation
 
     def save(self, *args, **kwargs):
         if self.role == 'superadmin':

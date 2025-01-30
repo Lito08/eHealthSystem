@@ -6,7 +6,7 @@ from users.models import CustomUser
 class HostelForm(forms.ModelForm):
     class Meta:
         model = Hostel
-        fields = ['name', 'block', 'levels', 'rooms_per_level']
+        fields = ['name', 'block', 'levels', 'rooms_per_level', 'is_infected_hostel']  # Added is_infected_hostel checkbox
 
     def clean(self):
         cleaned_data = super().clean()
