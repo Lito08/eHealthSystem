@@ -62,7 +62,11 @@ class UserRegistrationForm(UserCreationForm):
 
 
 class UserUpdateForm(forms.ModelForm):
-    role = forms.ChoiceField(choices=CustomUser.ROLE_CHOICES)
+    role = forms.CharField(
+        required=False,
+        label="Role",
+        widget=forms.TextInput(attrs={"readonly": "readonly"}),
+    )
     matric_id = forms.CharField(
         max_length=20,
         required=False,
