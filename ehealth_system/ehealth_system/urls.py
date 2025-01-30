@@ -3,9 +3,11 @@ from django.urls import include, path
 from . import views
 from django.contrib.auth.decorators import login_required
 from users.views import dashboard
+from users.views import user_login
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('login/', user_login, name='login'),
     path('users/', include('users.urls')),
     path('admin/', admin.site.urls),
     path('appointments/', include('appointments.urls')),

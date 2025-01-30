@@ -18,10 +18,14 @@ def user_login(request):
         user = authenticate(request, matric_id=matric_id, password=password)
         if user is not None:
             login(request, user)
-            return redirect('dashboard')
+            if user.role in ['superadmin', 'admin']:
+                return redirect('dashboard')  # Admins go to dashboard
+            else:
+                return redirect('home')  # Residents go to home
         else:
             messages.error(request, "Invalid Matric ID or password.")
     return render(request, 'users/login.html')
+
 
 @login_required
 def dashboard(request):

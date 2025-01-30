@@ -1,10 +1,14 @@
 import os
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
+@login_required
 def home(request):
-    return render(request, 'home.html')
+    """Redirects admins to the dashboard while allowing residents to view the homepage."""
+    if request.user.role in ['superadmin', 'admin']:
+        return redirect('dashboard')  # Redirect admins to dashboard
+    return render(request, 'home.html')  # Residents see home page
 
 @login_required
 def dashboard(request):

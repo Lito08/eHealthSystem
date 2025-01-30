@@ -5,55 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}eHealth System{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        body {
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: #f8f9fa;
+            padding-top: 20px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            transition: 0.3s;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            flex-grow: 1;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .sidebar .nav-link {
+            color: #333;
+        }
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .profile-dropdown {
+            margin-left: auto;
+        }
+        .sidebar-hidden {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .content-expanded {
+            margin-left: 0;
+        }
+    </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">eHealth System</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        {% if user.role == 'superadmin' or user.role == 'admin' %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}">Manage Users</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}">Manage Hostels</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}">Manage Appointments</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}">Manage Announcements</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}">Manage Hotspots</a></li>
-                        {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}">Announcements</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}">My Appointments</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}">Report Health Risk</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'view_hotspots' %}">View Hotspots</a></li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm nav-link">Logout</button>
-                            </form>
-                        </li>
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                    {% endif %}
-                </ul>                
-            </div>
-        </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
+    <!-- Sidebar -->
+    <div class="sidebar p-3" id="sidebar">
+        <h4 class="text-center">eHealth System</h4>
+        <ul class="nav flex-column">
+            {% if user.is_authenticated %}
+                {% if user.role == 'superadmin' or user.role == 'admin' %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}"><i class="bi bi-people"></i> Manage Users</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}"><i class="bi bi-building"></i> Manage Hostels</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}"><i class="bi bi-calendar"></i> Manage Appointments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}"><i class="bi bi-megaphone"></i> Manage Announcements</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}"><i class="bi bi-geo-alt"></i> Manage Hotspots</a></li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="bi bi-bar-chart"></i> Infected Status Counter</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}"><i class="bi bi-megaphone"></i> Announcements</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}"><i class="bi bi-clipboard-pulse"></i> Report Health Risk</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}"><i class="bi bi-calendar"></i> Appointments</a></li>
+                {% endif %}
+                <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-file-earmark-text"></i> Terms & Conditions</a></li>
+            {% endif %}
+        </ul>
     </div>
 
-    <!-- Footer -->
-    <footer class="text-center mt-5">
-        <p>&copy; 2025 eHealth System | MMU</p>
-    </footer>
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+            <div class="container-fluid">
+                <button class="btn btn-outline-primary" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <div class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto profile-dropdown">
+                        {% if user.is_authenticated %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person-circle"></i> {{ user.full_name }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> View Profile</a></li>
+                                    <li>
+                                        <form action="{% url 'logout' %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <div class="container mt-4">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById("sidebarToggle").addEventListener("click", function() {
+            let sidebar = document.getElementById("sidebar");
+            let mainContent = document.getElementById("mainContent");
+
+            if (sidebar.classList.contains("sidebar-hidden")) {
+                sidebar.classList.remove("sidebar-hidden");
+                mainContent.classList.remove("content-expanded");
+            } else {
+                sidebar.classList.add("sidebar-hidden");
+                mainContent.classList.add("content-expanded");
+            }
+        });
+    </script>
 </body>
 </html>

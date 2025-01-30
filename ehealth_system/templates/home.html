@@ -1,20 +1,97 @@
 {% extends 'base.html' %}
 
+{% block title %}Home - eHealth System{% endblock %}
+
 {% block content %}
-  <div class="container text-center mt-5">
-      <h1>Welcome to the eHealth System</h1>
+  <div class="container mt-4">
+      <h1 class="text-center">Welcome to the eHealth System</h1>
+
       {% if user.is_authenticated %}
-          <p class="lead">Welcome, {{ user.username }}! Managing COVID-19 quarantine and appointments for MMU residents.</p>
           {% if user.role == 'superadmin' or user.role == 'admin' %}
-              <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+              <div class="text-center">
+                  <p class="lead">Managing COVID-19 quarantine, appointments, and user records.</p>
+                  <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+              </div>
           {% else %}
-              <p class="lead">You are logged in as a resident. Please check your appointment status.</p>
+              <div class="row">
+                  <div class="col-md-12">
+                      <h2>Infected Status Counter</h2>
+                      <p class="lead">Track the number of infected and recovered individuals in your area.</p>
+                  </div>
+
+                  <!-- Heatmap -->
+                  <div class="col-md-12">
+                      <div id="heatmap" style="width: 100%; height: 400px;"></div>
+                  </div>
+
+                  <!-- Chart -->
+                  <div class="col-md-12 mt-4">
+                      <canvas id="infectedChart"></canvas>
+                  </div>
+              </div>
           {% endif %}
       {% else %}
-          <p class="lead">Managing COVID-19 quarantine and appointments for MMU residents.</p>
-          <div class="mt-4">
-              <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login</a>
+          <div class="text-center">
+              <p class="lead">Managing COVID-19 quarantine and appointments for MMU residents.</p>
+              <a href="{% url 'login' %}" class="btn btn-primary btn-lg mt-3">Login</a>
           </div>
       {% endif %}
   </div>
+
+  <script>
+      function initHeatmap() {
+          fetch("{% url 'get_hotspots' %}")
+              .then(response => response.json())
+              .then(data => {
+                  let map = new google.maps.Map(document.getElementById('heatmap'), {
+                      zoom: 13,
+                      center: { lat: 3.139, lng: 101.6869 },
+                      mapTypeId: 'satellite'
+                  });
+
+                  let heatmapData = data.hotspots.map(h => ({
+                      location: new google.maps.LatLng(h.latitude, h.longitude),
+                      weight: h.infected_count
+                  }));
+
+                  new google.maps.visualization.HeatmapLayer({
+                      data: heatmapData,
+                      map: map
+                  });
+
+                  initChart(data.hotspots);
+              })
+              .catch(error => console.error("Error fetching hotspot data:", error));
+      }
+
+      function initChart(hotspots) {
+          let ctx = document.getElementById('infectedChart').getContext('2d');
+          new Chart(ctx, {
+              type: 'bar',
+              data: {
+                  labels: hotspots.map(h => h.name),
+                  datasets: [{
+                      label: 'Infected Cases',
+                      data: hotspots.map(h => h.infected_count),
+                      backgroundColor: 'rgba(255, 0, 0, 0.6)'
+                  }, {
+                      label: 'Recovered Cases',
+                      data: hotspots.map(h => h.recovered_count),
+                      backgroundColor: 'rgba(0, 255, 0, 0.6)'
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  scales: {
+                      y: { beginAtZero: true }
+                  }
+              }
+          });
+      }
+  </script>
+
+  <script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAzLzsP6cgnWyjuo3kGVhPmYGy6Uk611S4&libraries=visualization&callback=initHeatmap">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
