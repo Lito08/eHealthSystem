@@ -114,11 +114,11 @@ class UserUpdateForm(forms.ModelForm):
             if assigned_room:
                 # Prepopulate the room and block
                 self.fields["hostel_block"].initial = assigned_room.hostel
-                self.fields["room"].queryset = Room.objects.filter(
-                    hostel=assigned_room.hostel
-                ).exclude(resident__isnull=False).union(
-                    Room.objects.filter(id=assigned_room.id)
-                )
+                available_rooms = Room.objects.filter(hostel=assigned_room.hostel, resident__isnull=True)
+                assigned_room_qs = Room.objects.filter(id=assigned_room.id)
+
+                self.fields["room"].queryset = available_rooms | assigned_room_qs
+
                 self.fields["room"].initial = assigned_room
             else:
                 self.fields["room"].queryset = Room.objects.filter(resident=None)
