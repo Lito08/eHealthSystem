@@ -125,7 +125,6 @@ def edit_appointment(request, appointment_id):
         'time_slots': available_time_slots  # Ensuring it's passed
     })
 
-
 @login_required
 def cancel_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
@@ -143,7 +142,6 @@ def cancel_appointment(request, appointment_id):
         return redirect('manage_appointments')  # Admin stays on manage page
     else:
         return redirect('appointment_list')  # Regular users go back to their list
-
 
 @login_required
 def confirm_appointment(request, appointment_id):
@@ -188,9 +186,14 @@ def report_health(request):
                 appointment_date += timedelta(days=1)
                 appointment_time = time(8, 0)
 
+        # Generate a unique appointment ID
+        last_appointment = Appointment.objects.order_by('-appointment_id').first()
+        last_id_number = int(last_appointment.appointment_id[4:]) if last_appointment else 0
+        appointment_id = f"APPT{last_id_number + 1:04d}"
+
         # Create the appointment
         Appointment.objects.create(
-            appointment_id=f"APPT{Appointment.objects.count() + 1:04d}",
+            appointment_id=appointment_id,
             resident=request.user,
             clinic=clinic,
             appointment_date=appointment_date,
