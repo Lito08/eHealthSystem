@@ -35,6 +35,7 @@
             <th>Role</th>
             <th>Phone Number</th>
             <th>Room Details</th>
+            <th>Status</th> <!-- New column for infection status -->
             <th>Actions</th>
         </tr>
     </thead>
@@ -48,6 +49,15 @@
                     <td>{{ user.get_role_display }}</td>
                     <td>{{ user.phone_number|default:'-' }}</td>
                     <td>{{ user.room_details }}</td>
+                    <td>
+                        {% if user.infected_status == "infected" %}
+                            <span class="badge bg-danger">Infected</span>
+                        {% elif user.infected_status == "recovered" %}
+                            <span class="badge bg-success">Recovered</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Healthy</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <a href="{% url 'update_user' user.id %}" class="btn btn-warning btn-sm">Edit</a>
                         <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"
@@ -63,6 +73,15 @@
                     <td>{{ user.phone_number|default:'-' }}</td>
                     <td>{{ user.room_details }}</td>
                     <td>
+                        {% if user.infected_status == "infected" %}
+                            <span class="badge bg-danger">Infected</span>
+                        {% elif user.infected_status == "recovered" %}
+                            <span class="badge bg-success">Recovered</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Healthy</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         <a href="{% url 'update_user' user.id %}" class="btn btn-warning btn-sm">Edit</a>
                         <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"
                            onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
@@ -71,7 +90,7 @@
             {% endif %}
         {% empty %}
             <tr>
-                <td colspan="7" class="text-center">No users found for the selected role.</td>
+                <td colspan="8" class="text-center">No users found for the selected role.</td>
             </tr>
         {% endfor %}
     </tbody>

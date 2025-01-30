@@ -2,42 +2,65 @@
 {% block title %}Book Appointment{% endblock %}
 
 {% block content %}
-  <div class="card shadow-lg">
-      <div class="card-header bg-primary text-white">
-          <h3 class="text-center">Book an Appointment</h3>
-      </div>
-      <div class="card-body">
-          <form method="post" class="needs-validation" novalidate>
-              {% csrf_token %}
+<div class="card shadow-lg">
+    <div class="card-header bg-primary text-white">
+        <h3 class="text-center">Book an Appointment</h3>
+    </div>
+    <div class="card-body">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
 
-              <div class="mb-3">
-                  <label class="form-label">Clinic:</label>
-                  {% if clinic %}
-                      <input type="text" class="form-control" value="{{ clinic.name }}" readonly>
-                  {% else %}
-                      <p class="text-danger">No clinic available.</p>
-                  {% endif %}
-              </div>
+        {% if clinic %}
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
 
-              <div class="mb-3">
-                  <label for="appointment_date" class="form-label">Select Date:</label>
-                  <input type="date" class="form-control" name="appointment_date" required>
-              </div>
+                <!-- Select Resident -->
+                <div class="mb-3">
+                    <label for="resident" class="form-label">Select Resident:</label>
+                    <select class="form-select" name="resident" required>
+                        <option value="" disabled selected>Select a resident</option>
+                        {% for resident in residents %}
+                            <option value="{{ resident.id }}">{{ resident.full_name }} ({{ resident.matric_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-              <div class="mb-3">
-                  <label for="appointment_time" class="form-label">Select Time:</label>
-                  <input type="time" class="form-control" name="appointment_time" required>
-              </div>
+                <!-- Clinic Name -->
+                <div class="mb-3">
+                    <label class="form-label">Clinic:</label>
+                    <input type="text" class="form-control" value="{{ clinic.name }}" readonly>
+                </div>
 
-              <div class="mb-3">
-                  <label for="reason" class="form-label">Reason:</label>
-                  <textarea name="reason" class="form-control" rows="3" required></textarea>
-              </div>
+                <!-- Appointment Date -->
+                <div class="mb-3">
+                    <label for="appointment_date" class="form-label">Select Date:</label>
+                    <input type="date" class="form-control" name="appointment_date" min="{{ today|date:'Y-m-d' }}" required>
+                </div>
 
-              <div class="d-grid gap-2">
-                  <button type="submit" class="btn btn-success">Book Appointment</button>
-              </div>
-          </form>
-      </div>
-  </div>
+                <!-- Appointment Time -->
+                <div class="mb-3">
+                    <label for="appointment_time" class="form-label">Select Time:</label>
+                    <select class="form-select" name="appointment_time" required>
+                        <option value="" disabled selected>Select a time slot</option>
+                        {% for slot in available_time_slots %}
+                            <option value="{{ slot }}">{{ slot }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success">Book Appointment</button>
+                </div>
+            </form>
+        {% else %}
+            <p class="text-danger text-center">No clinic available for appointments. Please contact admin.</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

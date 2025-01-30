@@ -9,6 +9,10 @@ from django.utils.timezone import now
 
 @login_required
 def book_appointment(request):
+    if request.user.role not in ['admin', 'superadmin']:
+        messages.error(request, "You are not authorized to book appointments.")
+        return redirect('appointment_list')
+
     clinic = Clinic.objects.first()  # Fetch the first clinic available
 
     if not clinic:
@@ -16,75 +20,97 @@ def book_appointment(request):
         return redirect('appointment_list')
 
     current_time = now()
+    today = current_time.date()
+    two_weeks_ago = today - timedelta(days=14)
 
-    # Check if resident is infected
-    health_status = ResidentHealthStatus.objects.filter(resident=request.user).first()
-    if health_status and health_status.is_infected():
-        messages.error(request, "You are currently infected and cannot book an appointment until recovery.")
-        return redirect('appointment_list')
-
-    # Check for existing pending appointments
-    existing_appointment = Appointment.objects.filter(
-        resident=request.user,
-        clinic=clinic,
-        status='Scheduled'
-    ).first()
-
-    if existing_appointment:
-        messages.warning(request, "You already have a pending appointment. Please cancel it before booking a new one.")
-        return redirect('appointment_list')
-
-    # Check if the resident had an appointment within the last 14 days
-    two_weeks_ago = current_time.date() - timedelta(days=14)
-    recent_appointment = Appointment.objects.filter(
-        resident=request.user,
-        clinic=clinic,
+    # Get residents who don't have a completed appointment in the last 14 days
+    residents_with_recent_appointments = Appointment.objects.filter(
+        status='Completed',
         appointment_date__gte=two_weeks_ago
-    ).exists()
+    ).values_list('resident_id', flat=True)
 
-    if recent_appointment:
-        messages.warning(request, "You cannot book a new appointment within 14 days of your last appointment.")
-        return redirect('appointment_list')
+    residents_with_scheduled_appointments = Appointment.objects.filter(
+        status='Scheduled'
+    ).values_list('resident_id', flat=True)
+
+    residents = CustomUser.objects.filter(
+        role='student'
+    ).exclude(id__in=residents_with_recent_appointments).exclude(id__in=residents_with_scheduled_appointments)
+
+    # Generate available time slots dynamically (8:00 AM - 8:00 PM, every 15 mins)
+    available_time_slots = []
+    start_time = time(8, 0)
+    end_time = time(20, 0)
+    current_slot = datetime.combine(today, start_time)
+
+    while current_slot.time() < end_time:
+        # Check if this time slot is already booked
+        if not Appointment.objects.filter(
+            clinic=clinic,
+            appointment_date=today,
+            appointment_time=current_slot.time()
+        ).exists():
+            available_time_slots.append(current_slot.strftime("%H:%M"))
+
+        current_slot += timedelta(minutes=15)  # Increment time slot
 
     if request.method == 'POST':
+        resident_id = request.POST.get('resident')
         appointment_date = request.POST.get('appointment_date')
         appointment_time = request.POST.get('appointment_time')
-        reason = request.POST.get('reason')
 
-        if not appointment_date or not appointment_time or not reason:
+        if not resident_id or not appointment_date or not appointment_time:
             messages.error(request, "All fields are required.")
             return redirect('book_appointment')
 
-        # Validate appointment time
+        resident = CustomUser.objects.filter(id=resident_id, role='student').first()
+        if not resident:
+            messages.error(request, "Invalid resident selected.")
+            return redirect('book_appointment')
+
+        # Convert input values to datetime objects
+        appointment_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
         appointment_time_obj = datetime.strptime(appointment_time, "%H:%M").time()
+
+        # Ensure appointment is in the future
+        if appointment_date < today or (appointment_date == today and appointment_time_obj <= current_time.time()):
+            messages.error(request, "You cannot book an appointment in the past. Please select a future time.")
+            return redirect('book_appointment')
+
+        # Ensure appointment time is within working hours
         if appointment_time_obj < time(8, 0) or appointment_time_obj > time(20, 0):
             messages.error(request, "Appointments can only be booked between 8:00 AM and 8:00 PM.")
             return redirect('book_appointment')
 
-        # Check for double booking
-        overlapping_appointment = Appointment.objects.filter(
-            clinic=clinic,
-            appointment_date=appointment_date,
-            appointment_time=appointment_time_obj
-        ).exists()
-
-        if overlapping_appointment:
-            messages.error(request, f"The time slot at {appointment_time} is already booked. Please choose another time.")
+        # Ensure the selected time slot is available
+        if appointment_time not in available_time_slots:
+            messages.error(request, "The selected time slot is not available. Please choose another time.")
             return redirect('book_appointment')
+
+        # Generate a unique appointment ID
+        last_appointment = Appointment.objects.order_by('-appointment_id').first()
+        last_id_number = int(last_appointment.appointment_id[4:]) if last_appointment else 0
+        appointment_id = f"APPT{last_id_number + 1:04d}"
 
         # Create the appointment
         Appointment.objects.create(
-            appointment_id=f"APPT{Appointment.objects.count() + 1:04d}",
-            resident=request.user,
+            appointment_id=appointment_id,
+            resident=resident,
             clinic=clinic,
             appointment_date=appointment_date,
-            appointment_time=appointment_time,
+            appointment_time=appointment_time_obj,
             result="Pending",
         )
-        messages.success(request, "Appointment booked successfully.")
-        return redirect('appointment_list')
 
-    return render(request, 'appointments/book_appointment.html', {'clinic': clinic})
+        messages.success(request, f"Appointment booked successfully for {resident.full_name} on {appointment_date} at {appointment_time_obj}.")
+        return redirect('manage_appointments')
+
+    return render(request, 'appointments/book_appointment.html', {
+        'clinic': clinic,
+        'today': today,
+        'available_time_slots': available_time_slots,
+        'residents': residents
+    })
 
 @login_required
 def appointment_list(request):
@@ -177,6 +203,12 @@ def cancel_appointment(request, appointment_id):
 def report_health(request):
     clinic = Clinic.objects.first()
 
+    if not clinic:
+        messages.error(request, "No clinic available for appointments. Please contact admin.")
+        return redirect('home')
+
+    current_time = now()
+
     # Check for ongoing scheduled appointment
     ongoing_appointment = Appointment.objects.filter(
         resident=request.user,
@@ -185,7 +217,7 @@ def report_health(request):
     ).exists()
 
     # Check for recent appointments within the past 14 days
-    fourteen_days_ago = now().date() - timedelta(days=14)
+    fourteen_days_ago = current_time.date() - timedelta(days=14)
     recent_appointment = Appointment.objects.filter(
         resident=request.user,
         clinic=clinic,
@@ -199,10 +231,6 @@ def report_health(request):
             messages.success(request, "You are safe! Stay healthy!")
             return redirect('home')
 
-        if not clinic:
-            messages.error(request, "No clinic available for appointments. Please contact admin.")
-            return redirect('home')
-
         if ongoing_appointment:
             messages.warning(request, "You already have a scheduled appointment. Please wait until it is completed.")
             return redirect('appointment_list')
@@ -211,18 +239,31 @@ def report_health(request):
             messages.warning(request, "You have already had an appointment in the last 14 days. Please wait before booking another.")
             return redirect('appointment_list')
 
-        # Ensure appointment time is in the future and within clinic hours
-        appointment_date = now().date()
-        appointment_time = time(8, 0)  # Start from the clinic's opening time
+        # Determine the correct appointment date and time
+        appointment_date = current_time.date()
+        appointment_time = time(8, 0)  # Default to 08:00 (24-hour format)
 
-        # Increment time in 15-minute slots until an available slot is found
+        if current_time.time() >= time(20, 0):  
+            # If it's past 20:00 (8 PM), move to the next day
+            appointment_date += timedelta(days=1)
+            appointment_time = time(8, 0)
+        else:
+            # Find the next available 15-minute slot **in 24-hour format**
+            next_slot = (current_time + timedelta(minutes=15)).time()
+            while next_slot.minute % 15 != 0:
+                next_slot = (datetime.combine(appointment_date, next_slot) + timedelta(minutes=1)).time()
+
+            appointment_time = next_slot if next_slot >= time(8, 0) else time(8, 0)
+
+        # Ensure the selected slot is actually available
         while Appointment.objects.filter(
             clinic=clinic,
             appointment_date=appointment_date,
             appointment_time=appointment_time
         ).exists():
             appointment_time = (datetime.combine(appointment_date, appointment_time) + timedelta(minutes=15)).time()
-            if appointment_time >= time(20, 0):  # Move to the next day if the clinic closes
+            if appointment_time >= time(20, 0):  
+                # Move to the next day if the last slot is full
                 appointment_date += timedelta(days=1)
                 appointment_time = time(8, 0)
 
@@ -241,7 +282,7 @@ def report_health(request):
             result="Pending",
         )
 
-        messages.success(request, "An appointment has been automatically booked for you.")
+        messages.success(request, f"An appointment has been automatically booked for {appointment_date} at {appointment_time.strftime('%H:%M')} (24-hour format).")
         return redirect('appointment_list')
 
     return render(request, 'appointments/report_health.html', {
@@ -282,14 +323,18 @@ def update_appointment_result(request, appointment_id):
         appointment.status = 'Completed'
         appointment.save()
 
-        # Only residents (users with assigned rooms) should be quarantined
-        if result == 'Positive' and appointment.resident.rooms_assigned.exists():
-            relocate_resident_to_quarantine(appointment.resident)
+        # If result is positive, mark resident as infected and relocate them
+        if result == 'Positive':
+            if hasattr(appointment.resident, 'mark_infected'):
+                appointment.resident.mark_infected(request)  # Pass request object
+            else:
+                messages.warning(request, f"{appointment.resident.full_name} does not have an `infected_status` attribute.")
 
         messages.success(request, "Appointment result updated successfully.")
         return redirect('manage_appointments')
 
     return render(request, 'appointments/update_result.html', {'appointment': appointment})
+
 
 def relocate_resident_to_quarantine(resident):
     """

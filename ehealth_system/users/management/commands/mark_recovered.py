@@ -10,13 +10,29 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         two_weeks_ago = now().date() - timedelta(days=14)
 
+        # Find infected residents whose appointment is older than 14 days
         infected_residents = CustomUser.objects.filter(
             infected_status="infected",
-            appointment__result="Positive",
-            appointment__appointment_date__lte=two_weeks_ago
+            appointments__result="Positive",
+            appointments__appointment_date__lte=two_weeks_ago
         ).distinct()
 
         for resident in infected_residents:
-            resident.mark_recovered()
+            if resident.original_room:
+                # Move back to the original room
+                original_room = resident.original_room
+                original_room.resident = resident
+                original_room.save()
 
-        self.stdout.write(self.style.SUCCESS(f"Recovered {infected_residents.count()} residents."))
+                # Free up the quarantine room
+                if resident.room:
+                    resident.room.resident = None
+                    resident.room.save()
+
+                # Update resident status
+                resident.infected_status = "recovered"
+                resident.room = resident.original_room  # Relocate back
+                resident.original_room = None  # Clear saved room
+                resident.save()
+
+                self.stdout.write(self.style.SUCCESS(f"{resident.full_name} has recovered and returned to their original room."))

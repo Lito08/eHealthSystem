@@ -37,7 +37,7 @@ class Room(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="assigned_room"
+        related_name="rooms_assigned"
     )
 
     @property

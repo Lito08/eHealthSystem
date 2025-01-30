@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from datetime import datetime, timedelta, date
 from hostels.models import Room
+from django.contrib import messages
 
 class CustomUserManager(BaseUserManager):
     def generate_matric_id(self, role):
@@ -68,23 +69,21 @@ class CustomUser(AbstractUser):
 
     objects = CustomUserManager()
 
-    def mark_infected(self):
+    def mark_infected(self, request):
         """Moves an infected resident to a quarantine room."""
-        if not self.room:
-            return  # Prevent error if the resident has no assigned room
-
         quarantine_room = Room.find_available_quarantine_room()
         if quarantine_room:
             self.original_room = self.room  # Save their original room before relocation
-            self.room.resident = None  # Free the original room
-            self.room.save()
-
             self.room = quarantine_room
             self.infected_status = 'infected'
             self.save()
 
             quarantine_room.resident = self
             quarantine_room.save()
+
+            messages.success(request, f"{self.full_name} has been relocated to quarantine.")
+        else:
+            messages.warning(request, "No available quarantine rooms.")
 
     def mark_recovered(self):
         """Moves a recovered resident back to their original room after 2 weeks."""

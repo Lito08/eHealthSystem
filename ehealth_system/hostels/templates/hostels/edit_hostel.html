@@ -53,6 +53,15 @@
               {% endif %}
           </div>
 
+          <!-- New Checkbox for Quarantine Hostels -->
+          <div class="mb-3 form-check">
+              {{ form.is_infected_hostel }}
+              <label class="form-check-label" for="id_is_infected_hostel">Mark as Infected Hostel (Quarantine Center)</label>
+              {% if form.is_infected_hostel.errors %}
+                  <div class="text-danger">{{ form.is_infected_hostel.errors.0 }}</div>
+              {% endif %}
+          </div>
+
           <button type="submit" class="btn btn-primary">Update Hostel</button>
       </form>
 

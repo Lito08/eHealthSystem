@@ -4,6 +4,13 @@
 {% block content %}
 <h2 class="text-center">Manage Appointments</h2>
 
+<!-- Book Appointment Button -->
+<div class="text-end mb-3">
+    <a href="{% url 'book_appointment' %}" class="btn btn-success">
+        <i class="fas fa-calendar-plus"></i> Book New Appointment
+    </a>
+</div>
+
 <div class="mb-5">
     <h4>Ongoing & Upcoming Appointments</h4>
     <table class="table table-striped">
