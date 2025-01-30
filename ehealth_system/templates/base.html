@@ -20,7 +20,9 @@
             top: 0;
             bottom: 0;
             transition: 0.3s;
+            overflow: hidden;
         }
+        
         .main-content {
             margin-left: 260px;
             padding: 20px;
@@ -28,29 +30,35 @@
             width: 100%;
             transition: 0.3s;
         }
+        
         .sidebar .nav-link {
             color: #333;
+            display: flex;
+            align-items: center;
         }
-        .sidebar .nav-link.active {
-            background-color: #0d6efd;
-            color: white;
+        
+        .sidebar .nav-link i {
+            margin-right: 10px;
         }
-        .profile-dropdown {
-            margin-left: auto;
-        }
+        
+        /* Sidebar Collapsed */
         .sidebar-hidden {
-            width: 70px; /* Keep the sidebar partially visible */
-            padding: 10px 0;
-            overflow: hidden;
+            width: 80px; /* Keeps the icon visible */
+            padding: 0;
         }
-        .sidebar-hidden h4 {
-            font-size: 16px;
+        
+        .sidebar-hidden .sidebar-text {
+            display: none; /* Hide text, only icons stay */
+        }
+        
+        .sidebar-hidden #sidebar-title {
+            font-size: 20px; /* Keep a compact logo */
             text-align: center;
-            transition: 0.3s;
         }
+        
         .content-expanded {
             margin-left: 80px;
-        }
+        }        
         .hidden-sidebar {
             display: none !important;
         }
@@ -58,28 +66,29 @@
 </head>
 <body>
 
-    <!-- Sidebar (Hidden if on Login Page) -->
-    <div class="sidebar p-3 {% if request.path == '/login/' %}hidden-sidebar{% endif %}" id="sidebar">
-        <h4 class="text-center" id="sidebarLogo">eHealth System</h4>
+    <!-- Sidebar -->
+    <div class="sidebar p-3" id="sidebar">
+        <h4 class="text-center" id="sidebar-title">eHealth System</h4>
         <ul class="nav flex-column">
             {% if user.is_authenticated %}
                 {% if user.role == 'superadmin' or user.role == 'admin' %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}"><i class="bi bi-people"></i> Manage Users</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}"><i class="bi bi-building"></i> Manage Hostels</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}"><i class="bi bi-calendar"></i> Manage Appointments</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}"><i class="bi bi-megaphone"></i> Manage Announcements</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}"><i class="bi bi-geo-alt"></i> Manage Hotspots</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_users' %}"><i class="bi bi-people"></i> <span class="sidebar-text">Manage Users</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'hostel_list' %}"><i class="bi bi-building"></i> <span class="sidebar-text">Manage Hostels</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_appointments' %}"><i class="bi bi-calendar"></i> <span class="sidebar-text">Manage Appointments</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_announcements' %}"><i class="bi bi-megaphone"></i> <span class="sidebar-text">Manage Announcements</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'manage_hotspots' %}"><i class="bi bi-geo-alt"></i> <span class="sidebar-text">Manage Hotspots</span></a></li>
                 {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="bi bi-bar-chart"></i> Infected Status Counter</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}"><i class="bi bi-megaphone"></i> Announcements</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}"><i class="bi bi-clipboard-pulse"></i> Report Health Risk</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}"><i class="bi bi-calendar"></i> Appointments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}"><i class="bi bi-bar-chart"></i> <span class="sidebar-text">Infected Status Counter</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'announcement_list' %}"><i class="bi bi-megaphone"></i> <span class="sidebar-text">Announcements</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'report_health' %}"><i class="bi bi-clipboard-pulse"></i> <span class="sidebar-text">Report Health Risk</span></a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'appointment_list' %}"><i class="bi bi-calendar"></i> <span class="sidebar-text">Appointments</span></a></li>
                 {% endif %}
-                <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-file-earmark-text"></i> Terms & Conditions</a></li>
+                <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-file-earmark-text"></i> <span class="sidebar-text">Terms & Conditions</span></a></li>
             {% endif %}
         </ul>
     </div>
+
 
     <!-- Main Content -->
     <div class="main-content {% if request.path == '/login/' %}content-expanded{% endif %}" id="mainContent">
@@ -121,21 +130,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById("sidebarToggle")?.addEventListener("click", function() {
+        document.getElementById("sidebarToggle").addEventListener("click", function() {
             let sidebar = document.getElementById("sidebar");
             let mainContent = document.getElementById("mainContent");
-            let sidebarLogo = document.getElementById("sidebarLogo");
-
+            let sidebarTitle = document.getElementById("sidebar-title");
+        
             if (sidebar.classList.contains("sidebar-hidden")) {
                 sidebar.classList.remove("sidebar-hidden");
                 mainContent.classList.remove("content-expanded");
-                sidebarLogo.textContent = "eHealth System"; // Show full text
+                sidebarTitle.textContent = "eHealth System"; // Full name when expanded
             } else {
                 sidebar.classList.add("sidebar-hidden");
                 mainContent.classList.add("content-expanded");
-                sidebarLogo.textContent = "EHS"; // Display a compact version
+                sidebarTitle.textContent = "EHS"; // Short name when collapsed
             }
-        });
+        });        
     </script>
 </body>
 </html>
