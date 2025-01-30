@@ -87,7 +87,7 @@
                                     <i class="bi bi-person-circle"></i> {{ user.full_name }}
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> View Profile</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'view_profile' %}"><i class="bi bi-person"></i> View Profile</a></li>
                                     <li>
                                         <form action="{% url 'logout' %}" method="post">
                                             {% csrf_token %}

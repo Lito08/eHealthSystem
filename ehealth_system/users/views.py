@@ -26,6 +26,10 @@ def user_login(request):
             messages.error(request, "Invalid Matric ID or password.")
     return render(request, 'users/login.html')
 
+@login_required
+def view_profile(request):
+    """Allows authenticated users to view their profile details."""
+    return render(request, 'users/view_profile.html', {'user': request.user})
 
 @login_required
 def dashboard(request):
