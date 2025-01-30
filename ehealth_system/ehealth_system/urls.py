@@ -15,4 +15,5 @@ urlpatterns = [
     path('dashboard/', login_required(dashboard), name='dashboard'),
     path('announcements/', include('announcements.urls')),
     path('hotspots/', include('hotspots.urls')),
+    path('terms/', include('terms.urls')),  # ✅ Added Terms & Conditions
 ]

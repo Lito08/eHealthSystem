@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'hostels',
     'announcements',
     'hotspots',
+    'terms',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

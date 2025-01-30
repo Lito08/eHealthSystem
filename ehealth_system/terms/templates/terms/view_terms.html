@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Terms & Conditions</h2>
+    <div class="border p-3 bg-light">
+        {{ terms.content|safe }}
+    </div>
+</div>
+{% endblock %}

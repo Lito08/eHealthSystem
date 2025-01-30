@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Terms & Conditions</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="content" class="form-label">Terms & Conditions:</label>
+            <textarea class="form-control" id="content" name="content" rows="10">{{ terms.content }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+{% endblock %}

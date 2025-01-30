@@ -1,17 +1,28 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2 class="text-center">Login</h2>
-  <form method="post">
-      {% csrf_token %}
-      <div class="mb-3">
-          <label for="matric_id" class="form-label">Matric ID</label>
-          <input type="text" class="form-control" name="matric_id" required>
-      </div>
-      <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input type="password" class="form-control" name="password" required>
-      </div>
-      <button type="submit" class="btn btn-primary w-100">Login</button>
-  </form>
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-sm" style="width: 350px;">
+        <h2 class="text-center mb-4">Login</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="matric_id" class="form-label">Matric ID</label>
+                <input type="text" class="form-control" name="matric_id" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Hide sidebar and navbar when on the login page */
+    .sidebar, .navbar { display: none; }
+    .main-content { margin-left: 0; }
+</style>
 {% endblock %}
