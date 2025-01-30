@@ -24,13 +24,30 @@
                               <td>{{ appointment.clinic.name }}</td>
                               <td>{{ appointment.appointment_date }}</td>
                               <td>{{ appointment.appointment_time }}</td>
-                              <td><span class="badge bg-info">{{ appointment.status }}</span></td>
                               <td>
-                                {% if user.role == 'admin' or user.role == 'superadmin' %}
-                                <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-warning btn-sm">Edit</a>
-                                {% endif %}
-                                <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Are you sure you want to cancel this appointment?');">Cancel</a>                           
+                                  {% if appointment.status == "Scheduled" %}
+                                      <span class="badge bg-warning text-dark">{{ appointment.status }}</span>
+                                  {% elif appointment.status == "Completed" %}
+                                      <span class="badge bg-success">{{ appointment.status }}</span>
+                                  {% elif appointment.status == "Cancelled" %}
+                                      <span class="badge bg-danger">{{ appointment.status }}</span>
+                                  {% else %}
+                                      <span class="badge bg-info">{{ appointment.status }}</span>
+                                  {% endif %}
+                              </td>
+                              <td>
+                                  {% if user.role == 'admin' or user.role == 'superadmin' %}
+                                      <a href="{% url 'edit_appointment' appointment.appointment_id %}" class="btn btn-warning btn-sm">Edit</a>
+                                  {% endif %}
+                                  
+                                  {% if appointment.status == "Scheduled" and appointment.appointment_date >= today %}
+                                      <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm"
+                                          onclick="return confirm('Are you sure you want to cancel this appointment?');">
+                                          Cancel
+                                      </a>
+                                  {% else %}
+                                      <button class="btn btn-secondary btn-sm" disabled>Cannot Cancel</button>
+                                  {% endif %}
                               </td>
                           </tr>
                       {% endfor %}

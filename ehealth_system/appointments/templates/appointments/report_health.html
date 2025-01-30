@@ -2,24 +2,34 @@
 {% block title %}Report Health Risk{% endblock %}
 
 {% block content %}
-  <div class="card shadow-lg">
+<div class="card shadow-lg">
     <div class="card-header bg-primary text-white">
         <h3 class="text-center">Report Health Risk</h3>
     </div>
-      <div class="card-body">
+    <div class="card-body">
+        
+        <!-- Check for ongoing appointment -->
+        {% if ongoing_appointment %}
+            <p class="lead text-center text-danger">
+                You already have an ongoing appointment scheduled on 
+                <strong>{{ ongoing_appointment.appointment_date }}</strong> at 
+                <strong>{{ ongoing_appointment.appointment_time }}</strong>.
+            </p>
+            <div class="text-center mt-3">
+                <a href="{% url 'appointment_list' %}" class="btn btn-primary">View My Appointments</a>
+            </div>
 
-          <!-- Check for ongoing appointment -->
-          {% if ongoing_appointment %}
-              <p class="lead text-center text-danger">
-                  You already have an ongoing appointment scheduled on 
-                  <strong>{{ ongoing_appointment.appointment_date }}</strong> at 
-                  <strong>{{ ongoing_appointment.appointment_time }}</strong>.
-              </p>
-              <div class="text-center mt-3">
-                  <a href="{% url 'appointment_list' %}" class="btn btn-primary">View My Appointments</a>
-              </div>
-          {% else %}
-          <div class="text-center">
+        <!-- Check for recent appointment in last 14 days -->
+        {% elif recent_appointment %}
+            <p class="lead text-center text-warning">
+                You had an appointment within the last 14 days. You must wait before booking another appointment.
+            </p>
+            <div class="text-center mt-3">
+                <a href="{% url 'appointment_list' %}" class="btn btn-primary">View My Appointments</a>
+            </div>
+
+        {% else %}
+        <div class="text-center">
             <p class="lead">
                 The following list does not include all possible symptoms.<br>
                 Symptoms may change with new COVID-19 variants and can vary <br>
@@ -39,7 +49,7 @@
                 <li>• Diarrhea</li>
             </ul>
         </div>
-        
+
         <form method="post">
             {% csrf_token %}
             <div class="d-flex justify-content-center gap-3 mt-3">
@@ -48,7 +58,7 @@
             </div>
         </form>
                    
-          {% endif %}
-      </div>
-  </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

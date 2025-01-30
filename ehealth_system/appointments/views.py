@@ -3,6 +3,7 @@ from .models import Appointment, Clinic
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import datetime, time, timedelta
+from django.utils.timezone import now
 
 @login_required
 def book_appointment(request):
@@ -12,7 +13,9 @@ def book_appointment(request):
         messages.error(request, "No clinic available. Please contact admin.")
         return redirect('appointment_list')
 
-    # Check for existing pending appointments
+    current_time = now()
+
+    # Check if the resident already has a pending or ongoing appointment
     existing_appointment = Appointment.objects.filter(
         resident=request.user,
         clinic=clinic,
@@ -20,7 +23,19 @@ def book_appointment(request):
     ).first()
 
     if existing_appointment:
-        messages.warning(request, "You already have a pending appointment. Please cancel it before booking a new one.")
+        messages.warning(request, "You already have an ongoing appointment. Please cancel it before booking a new one.")
+        return redirect('appointment_list')
+
+    # Check if the resident had an appointment within the last 14 days
+    two_weeks_ago = current_time.date() - timedelta(days=14)
+    recent_appointment = Appointment.objects.filter(
+        resident=request.user,
+        clinic=clinic,
+        appointment_date__gte=two_weeks_ago
+    ).exists()
+
+    if recent_appointment:
+        messages.warning(request, "You cannot book a new appointment within 14 days of your last appointment.")
         return redirect('appointment_list')
 
     if request.method == 'POST':
@@ -129,8 +144,15 @@ def edit_appointment(request, appointment_id):
 def cancel_appointment(request, appointment_id):
     appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
 
-    # Allow resident to cancel their own appointment or admin to cancel any appointment
-    if request.user == appointment.resident or request.user.role in ['admin', 'superadmin']:
+    current_time = now()
+
+    # Prevent residents from canceling past appointments
+    if request.user == appointment.resident and appointment.appointment_date < current_time.date():
+        messages.error(request, "You cannot cancel an appointment that has already passed.")
+        return redirect('appointment_list')
+
+    # Allow only admins to cancel past appointments
+    if request.user.role in ['admin', 'superadmin'] or (request.user == appointment.resident and appointment.appointment_date >= current_time.date()):
         appointment.delete()
         messages.success(request, "Appointment canceled successfully.")
     else:
@@ -143,16 +165,29 @@ def cancel_appointment(request, appointment_id):
     else:
         return redirect('appointment_list')  # Regular users go back to their list
 
+from django.utils.timezone import now
+from datetime import datetime, timedelta
+
 @login_required
 def report_health(request):
     clinic = Clinic.objects.first()
+
+    # Check for ongoing scheduled appointment
     ongoing_appointment = Appointment.objects.filter(
         resident=request.user,
         clinic=clinic,
         status='Scheduled'
-    ).first()
+    ).exists()
 
-    if request.method == 'POST' and not ongoing_appointment:
+    # Check for recent appointments within the past 14 days
+    fourteen_days_ago = now().date() - timedelta(days=14)
+    recent_appointment = Appointment.objects.filter(
+        resident=request.user,
+        clinic=clinic,
+        appointment_date__gte=fourteen_days_ago
+    ).exists()
+
+    if request.method == 'POST':
         has_symptoms = request.POST.get('has_symptoms', 'no')
 
         if has_symptoms == 'no':
@@ -163,9 +198,16 @@ def report_health(request):
             messages.error(request, "No clinic available for appointments. Please contact admin.")
             return redirect('home')
 
+        if ongoing_appointment:
+            messages.warning(request, "You already have a scheduled appointment. Please wait until it is completed.")
+            return redirect('appointment_list')
+
+        if recent_appointment:
+            messages.warning(request, "You have already had an appointment in the last 14 days. Please wait before booking another.")
+            return redirect('appointment_list')
+
         # Ensure appointment time is in the future and within clinic hours
-        now = datetime.now()
-        appointment_date = now.date()
+        appointment_date = now().date()
         appointment_time = time(8, 0)  # Start from the clinic's opening time
 
         # Increment time in 15-minute slots until an available slot is found
@@ -193,10 +235,14 @@ def report_health(request):
             appointment_time=appointment_time,
             result="Pending",
         )
+
         messages.success(request, "An appointment has been automatically booked for you.")
         return redirect('appointment_list')
 
-    return render(request, 'appointments/report_health.html', {'ongoing_appointment': ongoing_appointment})
+    return render(request, 'appointments/report_health.html', {
+        'ongoing_appointment': ongoing_appointment,
+        'recent_appointment': recent_appointment
+    })
 
 @login_required
 def manage_appointments(request):
