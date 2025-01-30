@@ -39,20 +39,28 @@
             margin-left: auto;
         }
         .sidebar-hidden {
-            width: 0;
-            padding: 0;
+            width: 70px; /* Keep the sidebar partially visible */
+            padding: 10px 0;
             overflow: hidden;
         }
+        .sidebar-hidden h4 {
+            font-size: 16px;
+            text-align: center;
+            transition: 0.3s;
+        }
         .content-expanded {
-            margin-left: 0;
+            margin-left: 80px;
+        }
+        .hidden-sidebar {
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar p-3" id="sidebar">
-        <h4 class="text-center">eHealth System</h4>
+    <!-- Sidebar (Hidden if on Login Page) -->
+    <div class="sidebar p-3 {% if request.path == '/login/' %}hidden-sidebar{% endif %}" id="sidebar">
+        <h4 class="text-center" id="sidebarLogo">eHealth System</h4>
         <ul class="nav flex-column">
             {% if user.is_authenticated %}
                 {% if user.role == 'superadmin' or user.role == 'admin' %}
@@ -74,11 +82,14 @@
     </div>
 
     <!-- Main Content -->
-    <div class="main-content" id="mainContent">
+    <div class="main-content {% if request.path == '/login/' %}content-expanded{% endif %}" id="mainContent">
         <!-- Navbar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container-fluid">
-                <button class="btn btn-outline-primary" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                {% if user.is_authenticated %}
+                    <button class="btn btn-outline-primary" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                {% endif %}
+                <h4 class="ms-3">eHealth System</h4>  <!-- Show eHealth System in Navbar when Sidebar is hidden -->
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav ms-auto profile-dropdown">
                         {% if user.is_authenticated %}
@@ -96,8 +107,6 @@
                                     </li>
                                 </ul>
                             </li>
-                        {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
                         {% endif %}
                     </ul>
                 </div>
@@ -112,16 +121,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById("sidebarToggle").addEventListener("click", function() {
+        document.getElementById("sidebarToggle")?.addEventListener("click", function() {
             let sidebar = document.getElementById("sidebar");
             let mainContent = document.getElementById("mainContent");
+            let sidebarLogo = document.getElementById("sidebarLogo");
 
             if (sidebar.classList.contains("sidebar-hidden")) {
                 sidebar.classList.remove("sidebar-hidden");
                 mainContent.classList.remove("content-expanded");
+                sidebarLogo.textContent = "eHealth System"; // Show full text
             } else {
                 sidebar.classList.add("sidebar-hidden");
                 mainContent.classList.add("content-expanded");
+                sidebarLogo.textContent = "EHS"; // Display a compact version
             }
         });
     </script>
