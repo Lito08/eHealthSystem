@@ -15,7 +15,13 @@ def book_appointment(request):
 
     current_time = now()
 
-    # Check if the resident already has a pending or ongoing appointment
+    # Check if resident is infected
+    health_status = ResidentHealthStatus.objects.filter(resident=request.user).first()
+    if health_status and health_status.is_infected():
+        messages.error(request, "You are currently infected and cannot book an appointment until recovery.")
+        return redirect('appointment_list')
+
+    # Check for existing pending appointments
     existing_appointment = Appointment.objects.filter(
         resident=request.user,
         clinic=clinic,
@@ -23,7 +29,7 @@ def book_appointment(request):
     ).first()
 
     if existing_appointment:
-        messages.warning(request, "You already have an ongoing appointment. Please cancel it before booking a new one.")
+        messages.warning(request, "You already have a pending appointment. Please cancel it before booking a new one.")
         return redirect('appointment_list')
 
     # Check if the resident had an appointment within the last 14 days
@@ -165,9 +171,6 @@ def cancel_appointment(request, appointment_id):
     else:
         return redirect('appointment_list')  # Regular users go back to their list
 
-from django.utils.timezone import now
-from datetime import datetime, timedelta
-
 @login_required
 def report_health(request):
     clinic = Clinic.objects.first()
@@ -244,13 +247,35 @@ def report_health(request):
         'recent_appointment': recent_appointment
     })
 
+def relocate_resident_to_quarantine(resident):
+    """Relocate infected residents to an available quarantine room."""
+    infected_hostel = Hostel.objects.filter(is_infected_hostel=True).first()
+
+    if not infected_hostel:
+        messages.warning(None, "No infected hostel available. Please assign manually.")
+        return
+
+    available_room = Room.objects.filter(hostel=infected_hostel, resident__isnull=True).first()
+
+    if available_room:
+        # Save original room before relocating
+        resident.original_room = resident.rooms_assigned.first()
+        resident.save()
+
+        # Relocate resident
+        available_room.resident = resident
+        available_room.save()
+        messages.success(None, f"{resident.full_name} has been relocated to quarantine.")
+    else:
+        messages.warning(None, "No available quarantine rooms.")
+
 @login_required
 def manage_appointments(request):
     if request.user.role not in ['admin', 'superadmin']:
         messages.error(request, "You are not authorized to manage appointments.")
         return redirect('home')
 
-    all_appointments = Appointment.objects.all().order_by('appointment_date', 'appointment_time')
+    all_appointments = Appointment.objects.all().order_by('-appointment_date', '-appointment_time')
     ongoing_appointments = all_appointments.filter(status='Scheduled')
 
     return render(request, 'appointments/manage_appointments.html', {
@@ -273,8 +298,39 @@ def update_appointment_result(request, appointment_id):
             messages.error(request, "Invalid result selection.")
             return redirect('manage_appointments')
 
-        appointment.mark_completed(result)
+        # Mark appointment as completed and update result
+        appointment.result = result
+        appointment.status = "Completed"
+        appointment.save()
+
+        # If result is positive, relocate the resident to an infected hostel
+        if result == "Positive":
+            relocate_resident_to_quarantine(appointment.resident)
+
         messages.success(request, "Appointment result updated successfully.")
         return redirect('manage_appointments')
 
     return render(request, 'appointments/update_result.html', {'appointment': appointment})
+
+def mark_recovered():
+    """Automatically changes the infected tag to recovered after 14 days."""
+    two_weeks_ago = now().date() - timedelta(days=14)
+
+    # Get all residents with a positive test result older than 14 days
+    recovered_residents = CustomUser.objects.filter(
+        appointments__result='Positive',
+        appointments__appointment_date__lte=two_weeks_ago
+    ).distinct()
+
+    for resident in recovered_residents:
+        if resident.original_room:
+            # Move back to the original room
+            original_room = resident.original_room
+            original_room.resident = resident
+            original_room.save()
+
+            # Reset resident's quarantine flag
+            resident.original_room = None
+            resident.save()
+
+            messages.success(None, f"{resident.full_name} has recovered and returned to their original room.")

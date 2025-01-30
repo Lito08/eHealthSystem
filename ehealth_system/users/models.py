@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from datetime import datetime
+from datetime import datetime, timedelta, date
+from hostels.models import Room
 
 class CustomUserManager(BaseUserManager):
     def generate_matric_id(self, role):
@@ -11,7 +12,7 @@ class CustomUserManager(BaseUserManager):
             'lecturer': 'L',
             'student': 'S'
         }.get(role, 'S')
-        
+
         last_user = self.model.objects.filter(role=role).order_by('-matric_id').first()
         if last_user and last_user.matric_id:
             last_number = int(last_user.matric_id[3:]) + 1
@@ -37,7 +38,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(matric_id, email, password, **extra_fields)
 
 class CustomUser(AbstractUser):
-    username = None  # Remove the default username field
+    username = None
     ROLE_CHOICES = [
         ('student', 'Student'),
         ('lecturer', 'Lecturer'),
@@ -50,15 +51,46 @@ class CustomUser(AbstractUser):
     matric_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    infected_status = models.CharField(max_length=20, choices=[
+        ('healthy', 'Healthy'),
+        ('infected', 'Infected'),
+        ('recovered', 'Recovered'),
+    ], default='healthy')
+    original_room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True, related_name="previous_resident")
 
     USERNAME_FIELD = 'matric_id'
     REQUIRED_FIELDS = ['email']
 
     objects = CustomUserManager()
 
+    def mark_infected(self):
+        """Moves an infected resident to a quarantine room."""
+        quarantine_room = Room.find_available_quarantine_room()
+        if quarantine_room:
+            self.original_room = self.room  # Save their original room before relocation
+            self.room = quarantine_room
+            self.infected_status = 'infected'
+            self.save()
+            quarantine_room.resident = self
+            quarantine_room.save()
+
+    def mark_recovered(self):
+        """Moves a recovered resident back to their original room after 2 weeks."""
+        if self.original_room:
+            self.room.resident = None
+            self.room.save()
+
+            self.room = self.original_room
+            self.infected_status = 'recovered'
+            self.save()
+
+            self.original_room.resident = self
+            self.original_room.save()
+            self.original_room = None  # Reset after relocation
+
     def save(self, *args, **kwargs):
         if self.role == 'superadmin':
-            self.full_name = ''  # Automatically blank name for superadmins
+            self.full_name = ''
         super().save(*args, **kwargs)
 
     def __str__(self):
