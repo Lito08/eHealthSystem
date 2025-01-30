@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Edit COVID-19 Hotspot{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">Edit Hotspot</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Location Name</label>
+            {{ form.name }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Infected Count</label>
+            {{ form.infected_count }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Recovered Count</label>
+            {{ form.recovered_count }}
+        </div>
+
+        <!-- Google Maps Integration -->
+        <div class="mb-3">
+            <label class="form-label">Select Location</label>
+            <div id="map" style="height: 400px; width: 100%;"></div>
+        </div>
+
+        <!-- Hidden Latitude and Longitude Fields -->
+        {{ form.latitude }}
+        {{ form.longitude }}
+
+        <button type="submit" class="btn btn-primary">Update Hotspot</button>
+    </form>
+    <a href="{% url 'manage_hotspots' %}" class="btn btn-secondary mt-3">Back to Manage Hotspots</a>
+</div>
+
+<!-- Google Maps API Script -->
+<script>
+    let map;
+    let marker;
+    function initMap() {
+        let initialLocation = { lat: {{ hotspot.latitude|default:3.1390 }}, lng: {{ hotspot.longitude|default:101.6869 }} };
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: initialLocation,
+            zoom: 14,
+        });
+
+        marker = new google.maps.Marker({
+            position: initialLocation,
+            map: map,
+            draggable: true
+        });
+
+        google.maps.event.addListener(marker, 'dragend', function(event) {
+            document.getElementById("id_latitude").value = event.latLng.lat();
+            document.getElementById("id_longitude").value = event.latLng.lng();
+        });
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAzLzsP6cgnWyjuo3kGVhPmYGy6Uk611S4&callback=initMap&libraries=places" async defer></script>
+{% endblock %}

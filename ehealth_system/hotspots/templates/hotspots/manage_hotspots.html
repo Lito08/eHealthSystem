@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Manage Hotspots{% endblock %}
+
+{% block content %}
+<h2 class="text-center">Manage Hotspots</h2>
+
+<!-- Buttons -->
+<div class="mb-3 text-end">
+    <a href="{% url 'add_hotspot' %}" class="btn btn-success">Add Hotspot</a>
+    <a href="{% url 'heatmap_view' %}" class="btn btn-primary">View Heatmap</a>
+</div>
+
+<!-- Hotspots Table -->
+<table class="table table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Location</th>
+            <th>Infected</th>
+            <th>Recovered</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for hotspot in hotspots %}
+            <tr>
+                <td>{{ hotspot.name }}</td>  <!-- Changed from location_name to name -->
+                <td>{{ hotspot.infected_count }}</td>
+                <td>{{ hotspot.recovered_count }}</td>
+                <td>
+                    <a href="{% url 'edit_hotspot' hotspot.id %}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{% url 'delete_hotspot' hotspot.id %}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Are you sure you want to delete this hotspot?');">Delete</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No hotspots found.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

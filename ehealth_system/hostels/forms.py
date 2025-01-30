@@ -1,5 +1,5 @@
 from django import forms
-from django.db import models
+from django.core.exceptions import ValidationError
 from .models import Hostel, Room
 from users.models import CustomUser
 
@@ -8,11 +8,31 @@ class HostelForm(forms.ModelForm):
         model = Hostel
         fields = ['name', 'block', 'levels', 'rooms_per_level']
 
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        block = cleaned_data.get('block')
+
+        # Check if hostel with the same name and block already exists
+        existing_hostel = Hostel.objects.filter(name=name, block=block)
+
+        if self.instance.pk:
+            existing_hostel = existing_hostel.exclude(pk=self.instance.pk)
+
+        if existing_hostel.exists():
+            raise ValidationError("A hostel with the same name and block already exists.")
+
+        return cleaned_data
+
 class RoomForm(forms.ModelForm):
     resident = forms.ModelChoiceField(
         queryset=CustomUser.objects.none(),  # Dynamically populated in `__init__`
         required=False,
         label="Assigned Resident",
+    )
+
+    clear_resident = forms.BooleanField(
+        required=False, label="Clear Assigned Resident", initial=False
     )
 
     class Meta:
@@ -21,10 +41,14 @@ class RoomForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(RoomForm, self).__init__(*args, **kwargs)
+
+        # Check if editing an existing room
         if self.instance and self.instance.resident:
             self.fields['resident'].queryset = CustomUser.objects.filter(
-                models.Q(role='student', rooms_assigned=None) | models.Q(id=self.instance.resident.id)
+                models.Q(role='student') & 
+                (models.Q(rooms_assigned=None) | models.Q(id=self.instance.resident.id))
             )
+            self.fields['resident'].initial = self.instance.resident
         else:
             self.fields['resident'].queryset = CustomUser.objects.filter(role='student', rooms_assigned=None)
 
@@ -32,15 +56,18 @@ class RoomForm(forms.ModelForm):
 
     def save(self, commit=True):
         room = super(RoomForm, self).save(commit=False)
-        if self.cleaned_data.get('resident'):
-            room.is_occupied = True
+
+        # Handle clearing the assigned resident
+        if self.cleaned_data.get('clear_resident'):
+            room.resident = None
         else:
-            room.is_occupied = False
+            room.resident = self.cleaned_data.get('resident')
 
         if commit:
             room.save()
+
+            # If assigning a resident, clear their previous room assignment
             if self.cleaned_data.get('resident'):
-                # Clear previous room assignments for this resident
                 self.cleaned_data['resident'].rooms_assigned.clear()
                 self.cleaned_data['resident'].rooms_assigned.add(room)
 

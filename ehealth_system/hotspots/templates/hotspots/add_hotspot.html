@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Add COVID-19 Hotspot{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">Add Hotspot</h2>
+    <form method="post" id="hotspotForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Location Name</label>
+            {{ form.name }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Infected Count</label>
+            {{ form.infected_count }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Recovered Count</label>
+            {{ form.recovered_count }}
+        </div>
+        
+        <!-- Map Container -->
+        <div class="mb-3">
+            <label class="form-label">Select Location</label>
+            <div id="map" style="height: 400px; width: 100%;"></div>
+        </div>
+
+        <!-- Hidden Fields for Latitude & Longitude -->
+        {{ form.latitude }}
+        {{ form.longitude }}
+
+        <button type="submit" class="btn btn-primary">Add Hotspot</button>
+    </form>
+    <a href="{% url 'manage_hotspots' %}" class="btn btn-secondary mt-3">Back to Manage Hotspots</a>
+</div>
+
+<!-- Google Maps JavaScript API -->
+<script>
+    function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 3.139, lng: 101.6869 }, // Default: Kuala Lumpur
+            zoom: 12,
+        });
+
+        let marker = new google.maps.Marker({
+            position: map.getCenter(),
+            map: map,
+            draggable: true,
+        });
+
+        // Update the latitude & longitude fields when the marker is moved
+        google.maps.event.addListener(marker, "dragend", function (event) {
+            document.getElementById("id_latitude").value = event.latLng.lat();
+            document.getElementById("id_longitude").value = event.latLng.lng();
+        });
+
+        // Click on map to move the marker
+        google.maps.event.addListener(map, "click", function (event) {
+            marker.setPosition(event.latLng);
+            document.getElementById("id_latitude").value = event.latLng.lat();
+            document.getElementById("id_longitude").value = event.latLng.lng();
+        });
+    }
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnd8Sh4ExcUsgKG0Zd0YVm1--6_DZGNIc&callback=initMap"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAzLzsP6cgnWyjuo3kGVhPmYGy6Uk611S4&callback=initMap&libraries=places" async defer></script>
+{% endblock %}

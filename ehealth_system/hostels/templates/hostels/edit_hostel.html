@@ -3,26 +3,59 @@
 {% block content %}
   <div class="container mt-4">
       <h2 class="mb-4">Edit Hostel: {{ hostel.name }}</h2>
+
+      <!-- Display Django form errors -->
+      {% if form.errors %}
+      <div class="alert alert-danger">
+          <strong>There were errors in your submission:</strong>
+          <ul>
+              {% for field, errors in form.errors.items %}
+                  {% for error in errors %}
+                      <li>{{ field|capfirst }}: {{ error }}</li>
+                  {% endfor %}
+              {% endfor %}
+          </ul>
+      </div>
+      {% endif %}
+
       <form method="post" class="needs-validation" novalidate>
           {% csrf_token %}
+          
           <div class="mb-3">
               <label for="id_name" class="form-label">Hostel Name</label>
               {{ form.name }}
+              {% if form.name.errors %}
+                  <div class="text-danger">{{ form.name.errors.0 }}</div>
+              {% endif %}
           </div>
+
           <div class="mb-3">
               <label for="id_block" class="form-label">Block</label>
               {{ form.block }}
+              {% if form.block.errors %}
+                  <div class="text-danger">{{ form.block.errors.0 }}</div>
+              {% endif %}
           </div>
+
           <div class="mb-3">
               <label for="id_levels" class="form-label">Levels</label>
               {{ form.levels }}
+              {% if form.levels.errors %}
+                  <div class="text-danger">{{ form.levels.errors.0 }}</div>
+              {% endif %}
           </div>
+
           <div class="mb-3">
               <label for="id_rooms_per_level" class="form-label">Rooms per Level</label>
               {{ form.rooms_per_level }}
+              {% if form.rooms_per_level.errors %}
+                  <div class="text-danger">{{ form.rooms_per_level.errors.0 }}</div>
+              {% endif %}
           </div>
+
           <button type="submit" class="btn btn-primary">Update Hostel</button>
       </form>
+
       <a href="{% url 'hostel_list' %}" class="btn btn-secondary mt-3">Back to List</a>
   </div>
 {% endblock %}

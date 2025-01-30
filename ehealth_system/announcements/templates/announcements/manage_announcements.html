@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Manage Announcements{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">Manage Announcements</h2>
+
+    <a href="{% url 'create_announcement' %}" class="btn btn-success mb-3">Create Announcement</a>
+
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Title</th>
+                <th>Created By</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for announcement in announcements %}
+                <tr>
+                    <td>{{ announcement.title }}</td>
+                    <td>{{ announcement.author.full_name }}</td>
+                    <td>{{ announcement.created_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <a href="{% url 'edit_announcement' announcement.id %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'delete_announcement' announcement.id %}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this announcement?');">Delete</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No announcements available.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'announcement_list' %}" class="btn btn-secondary mt-3">Back to Announcements</a>
+</div>
+{% endblock %}

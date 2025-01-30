@@ -26,7 +26,9 @@ SECRET_KEY = 'django-insecure-ufiyl16vyvqyq$-4nl^0n2upcd=#9$gx!svzsd&(65r&k)7up*
 DEBUG = True
 
 ALLOWED_HOSTS = []
-LOGIN_REDIRECT_URL = 'home'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'users.CustomUser'
 
 # Application definition
@@ -35,6 +37,8 @@ INSTALLED_APPS = [
     'users',
     'appointments',
     'hostels',
+    'announcements',
+    'hotspots',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -17,7 +17,9 @@
             <option value="student" {% if role_filter == 'student' %}selected{% endif %}>Students</option>
             <option value="lecturer" {% if role_filter == 'lecturer' %}selected{% endif %}>Lecturers</option>
             <option value="staff" {% if role_filter == 'staff' %}selected{% endif %}>University Staff</option>
-            <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admins</option>
+            {% if request.user.role == 'superadmin' %}
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admins</option>
+            {% endif %}
         </select>
         <button type="submit" class="btn btn-primary">Filter</button>
     </form>
@@ -28,6 +30,7 @@
     <thead class="table-dark">
         <tr>
             <th>Matric ID</th>
+            <th>Full Name</th>
             <th>Email</th>
             <th>Role</th>
             <th>Phone Number</th>
@@ -37,21 +40,38 @@
     </thead>
     <tbody>
         {% for user in users %}
-            <tr>
-                <td>{{ user.matric_id }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.get_role_display }}</td>
-                <td>{{ user.phone_number|default:'-' }}</td>
-                <td>{{ user.room_details }}</td>
-                <td>
-                    <a href="{% url 'update_user' user.id %}" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"
-                       onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
-                </td>                
-            </tr>
+            {% if user.role != 'superadmin' %}
+                <tr>
+                    <td>{{ user.matric_id }}</td>
+                    <td>{{ user.full_name|default:"-" }}</td> <!-- Show full name except for superadmin -->
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.get_role_display }}</td>
+                    <td>{{ user.phone_number|default:'-' }}</td>
+                    <td>{{ user.room_details }}</td>
+                    <td>
+                        <a href="{% url 'update_user' user.id %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                    </td>                
+                </tr>
+            {% elif request.user.role == 'superadmin' and user.role == 'admin' %}
+                <tr>
+                    <td>{{ user.matric_id }}</td>
+                    <td>{{ user.full_name|default:"-" }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.get_role_display }}</td>
+                    <td>{{ user.phone_number|default:'-' }}</td>
+                    <td>{{ user.room_details }}</td>
+                    <td>
+                        <a href="{% url 'update_user' user.id %}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{% url 'delete_user' user.id %}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                    </td>                
+                </tr>
+            {% endif %}
         {% empty %}
             <tr>
-                <td colspan="6" class="text-center">No users found for the selected role.</td>
+                <td colspan="7" class="text-center">No users found for the selected role.</td>
             </tr>
         {% endfor %}
     </tbody>

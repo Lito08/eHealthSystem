@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}COVID-19 Hotspot Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">COVID-19 Hotspots</h2>
+    <canvas id="hotspotChart"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var ctx = document.getElementById('hotspotChart').getContext('2d');
+            var hotspotData = {
+                labels: [{% for hotspot in hotspots %}"{{ hotspot.location_name }}",{% endfor %}],
+                datasets: [
+                    {
+                        label: "Infected",
+                        backgroundColor: "rgba(255, 99, 132, 0.6)",
+                        data: [{% for hotspot in hotspots %}{{ hotspot.infected_count }},{% endfor %}]
+                    },
+                    {
+                        label: "Recovered",
+                        backgroundColor: "rgba(75, 192, 192, 0.6)",
+                        data: [{% for hotspot in hotspots %}{{ hotspot.recovered_count }},{% endfor %}]
+                    }
+                ]
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: hotspotData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</div>
+{% endblock %}

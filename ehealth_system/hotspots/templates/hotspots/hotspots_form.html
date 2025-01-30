@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ "Edit Hotspot" if hotspot else "Create Hotspot" }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center">{{ "Edit Hotspot" if hotspot else "Create Hotspot" }}</h2>
+    
+    <form method="post" id="hotspotForm">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="id_name">Hotspot Name:</label>
+            {{ form.name }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_description">Description:</label>
+            {{ form.description }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_infected_count">Infected Count:</label>
+            {{ form.infected_count }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_recovered_count">Recovered Count:</label>
+            {{ form.recovered_count }}
+        </div>
+
+        <!-- Map for selecting location -->
+        <div id="map" style="height: 400px; margin-bottom: 15px;"></div>
+
+        <!-- Hidden fields to store selected latitude and longitude -->
+        <input type="hidden" id="id_latitude" name="latitude" value="{{ form.latitude.value }}">
+        <input type="hidden" id="id_longitude" name="longitude" value="{{ form.longitude.value }}">
+
+        <button type="submit" class="btn btn-primary">Save Hotspot</button>
+    </form>
+
+    <a href="{% url 'hotspot_list' %}" class="btn btn-secondary mt-3">Back to Hotspots</a>
+</div>
+
+<!-- Leaflet.js for map functionality -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var latitudeField = document.getElementById("id_latitude");
+        var longitudeField = document.getElementById("id_longitude");
+
+        // Default map coordinates (center of Malaysia)
+        var defaultLat = latitudeField.value || 3.1390;
+        var defaultLng = longitudeField.value || 101.6869;
+
+        var map = L.map('map').setView([defaultLat, defaultLng], 10);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Add a marker if there is an existing hotspot location
+        var marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+        // Function to update latitude & longitude fields
+        function updateLatLng(lat, lng) {
+            latitudeField.value = lat;
+            longitudeField.value = lng;
+        }
+
+        // Update fields when marker is dragged
+        marker.on('dragend', function (e) {
+            var position = marker.getLatLng();
+            updateLatLng(position.lat, position.lng);
+        });
+
+        // Update marker when clicking on map
+        map.on('click', function (e) {
+            marker.setLatLng(e.latlng);
+            updateLatLng(e.latlng.lat, e.latlng.lng);
+        });
+    });
+</script>
+
+{% endblock %}
