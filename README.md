@@ -1,7 +1,9 @@
 📌 eHealth System
+
 A Django-based system for managing COVID-19 quarantine tracking, appointments, and health monitoring for MMU residents.
 
 🔧 Installation & Setup
+
 1️⃣ Clone the repository
 bash
 Copy
@@ -22,6 +24,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 ⚙️ Database Setup
+
 4️⃣ Apply database migrations
 python manage.py makemigrations
 python manage.py migrate
@@ -31,6 +34,7 @@ python manage.py createsuperuser
 Enter your username, email, and password when prompted.
 
 🚀 Running the Application
+
 6️⃣ Start the Django server
 python manage.py runserver
 Access the app at http://127.0.0.1:8000/.
