@@ -29,8 +29,14 @@ def user_login(request):
 @login_required
 def view_profile(request):
     """Allows authenticated users to view their profile details."""
-    return render(request, 'users/view_profile.html', {'user': request.user})
+    
+    # Fetch the resident's room (if assigned)
+    room = Room.objects.filter(resident=request.user).first()
 
+    return render(request, 'users/view_profile.html', {
+        'user': request.user,
+        'room': room  # Pass the room object separately
+    })
 @login_required
 def dashboard(request):
     if request.user.role not in ['superadmin', 'admin']:

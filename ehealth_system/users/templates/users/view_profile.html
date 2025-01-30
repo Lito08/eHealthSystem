@@ -11,8 +11,8 @@
             <p class="card-text"><strong>Role:</strong> {{ user.role }}</p>
             <p class="card-text"><strong>Email:</strong> {{ user.email }}</p>
             <p class="card-text"><strong>Matric ID:</strong> {{ user.matric_id }}</p>
-            {% if user.room %}
-                <p class="card-text"><strong>Room:</strong> {{ user.room.hostel.block }}, Room {{ user.room.number }}</p>
+            {% if room %}
+                <p class="card-text"><strong>Room:</strong> {{ room.hostel.block }}, Room {{ room.number }}</p>
             {% else %}
                 <p class="card-text text-danger">No room assigned</p>
             {% endif %}
