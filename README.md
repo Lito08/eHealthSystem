@@ -52,6 +52,13 @@ pip install -r requirements.txt
 https://cmake.org
 ```
 
+Once you installed CMake, if this doesn't work.
+```bash
+cmake --version
+```
+That is, if cmake --version doesn't run from thesame terminal window from which you are reading this error message, then you have not installed cmake.  Windows users should take note that theyneed to tell the cmake installer to add cmake to their PATH.  Since you can't run commands that are not in your PATH.  This is how the PATH works on Linux as well, but failing to add cmake to the PATH is a particularly common problem on windows and rarely a problem on Linux.
+
+
 ---
 
 🏢 ## Database Setup
