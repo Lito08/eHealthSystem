@@ -49,14 +49,7 @@ pip install -r requirements.txt
 
 ### 3.1️⃣ Install CMake (Required for some dependencies)
 ```bash
-# On Windows (Using Chocolatey)
-choco install cmake
-
-# On macOS (Using Homebrew)
-brew install cmake
-
-# On Linux (Debian/Ubuntu)
-sudo apt install cmake
+https://cmake.org
 ```
 
 ---
