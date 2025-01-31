@@ -23,7 +23,7 @@ A Django-based system for managing COVID-19 quarantine tracking, appointments, a
 
 ---
 
-🔧 ## Installation & Setup
+🤟 ## Installation & Setup
 
 ### 1️⃣ Clone the repository
 ```bash
@@ -47,9 +47,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### 3.1️⃣ Install CMake (Required for some dependencies)
+```bash
+# On Windows (Using Chocolatey)
+choco install cmake
+
+# On macOS (Using Homebrew)
+brew install cmake
+
+# On Linux (Debian/Ubuntu)
+sudo apt install cmake
+```
+
 ---
 
-⚙️ ## Database Setup
+🏢 ## Database Setup
 
 ### 4️⃣ Apply database migrations
 ```bash
