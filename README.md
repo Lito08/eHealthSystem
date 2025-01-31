@@ -1,4 +1,4 @@
-📌 eHealth System
+📌 eHealth System by Group Rolls Royce
 
 A Django-based system for managing COVID-19 quarantine tracking, appointments, and health monitoring for MMU residents.
 
