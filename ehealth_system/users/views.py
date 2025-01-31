@@ -6,6 +6,8 @@ from django.contrib import messages
 from .forms import UserRegistrationForm, UserUpdateForm
 from django.http import JsonResponse
 from hostels.models import Room
+from appointments.models import Appointment
+from announcements.models import Announcement
 from .models import CustomUser
 from datetime import datetime
 
@@ -37,12 +39,37 @@ def view_profile(request):
         'user': request.user,
         'room': room  # Pass the room object separately
     })
+    
 @login_required
 def dashboard(request):
+    """Admin Dashboard with statistics and graphs."""
+    
     if request.user.role not in ['superadmin', 'admin']:
         messages.error(request, "You are not authorized to access this page.")
         return redirect('home')
-    return render(request, 'dashboard.html')
+
+    # Fetch statistics
+    total_users = CustomUser.objects.exclude(role='superadmin').count()
+    infected_count = CustomUser.objects.filter(infected_status='infected').count()
+    recovered_count = CustomUser.objects.filter(infected_status='recovered').count()
+    available_rooms = Room.objects.filter(resident__isnull=True).count()
+
+    # Appointments Overview
+    pending_appointments = Appointment.objects.filter(status='Scheduled').count()
+    completed_appointments = Appointment.objects.filter(status='Completed').count()
+    cancelled_appointments = Appointment.objects.filter(status='Cancelled').count()
+
+    context = {
+        "total_users": total_users,
+        "infected_count": infected_count,
+        "recovered_count": recovered_count,
+        "available_rooms": available_rooms,
+        "pending_appointments": pending_appointments,
+        "completed_appointments": completed_appointments,
+        "cancelled_appointments": cancelled_appointments
+    }
+
+    return render(request, 'dashboard.html', context)
 
 @login_required
 def manage_users(request):

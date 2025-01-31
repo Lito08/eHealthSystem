@@ -1,12 +1,100 @@
 {% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-  <div class="container text-center mt-5">
-      <h1>Welcome to the Dashboard</h1>
-      <p>Select an option from the menu to manage users and appointments.</p>
+<div class="container mt-4">
+    <h2 class="text-center">Admin Dashboard</h2>
 
-      <div class="mt-4">
-          <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
-      </div>
-  </div>
+    <!-- Quick Statistics -->
+    <div class="row text-center mt-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow-lg">
+                <div class="card-body">
+                    <h5>Total Users</h5>
+                    <h3>{{ total_users }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white shadow-lg">
+                <div class="card-body">
+                    <h5>Infected Residents</h5>
+                    <h3>{{ infected_count }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow-lg">
+                <div class="card-body">
+                    <h5>Available Rooms</h5>
+                    <h3>{{ available_rooms }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark shadow-lg">
+                <div class="card-body">
+                    <h5>Pending Appointments</h5>
+                    <h3>{{ pending_appointments }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphs Section -->
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <h4 class="text-center">Infected vs Recovered Residents</h4>
+            <canvas id="infectedChart"></canvas>
+        </div>
+
+        <div class="col-md-6">
+            <h4 class="text-center">Appointments Overview</h4>
+            <canvas id="appointmentsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Data for infected vs recovered residents
+    var infectedChart = new Chart(document.getElementById('infectedChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ["Infected", "Recovered"],
+            datasets: [{
+                data: [{{ infected_count }}, {{ recovered_count }}],
+                backgroundColor: ['#dc3545', '#28a745']
+            }]
+        },
+        options: {
+            responsive: true,
+        }
+    });
+
+    // Data for appointments
+    var appointmentsChart = new Chart(document.getElementById('appointmentsChart'), {
+        type: 'bar',
+        data: {
+            labels: ["Scheduled", "Completed", "Cancelled"],
+            datasets: [{
+                label: 'Appointments',
+                data: [{{ pending_appointments }}, {{ completed_appointments }}, {{ cancelled_appointments }}],
+                backgroundColor: ['#ffc107', '#28a745', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
