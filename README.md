@@ -48,16 +48,38 @@ pip install -r requirements.txt
 ```
 
 ### 3.1️⃣ Install CMake (Required for some dependencies)
+
+Before proceeding, ensure **CMake** is installed:
+
+#### **Windows**
+1. Download and install **CMake** from [CMake Website](https://cmake.org/download/).
+2. Run this command in **PowerShell (Admin mode)**:
+   ```powershell
+   winget install Kitware.CMake
+   ```
+3. Verify installation:
+   ```powershell
+   cmake --version
+   ```
+
+**Note:** If `cmake --version` doesn't work, ensure CMake is added to the system **PATH**.
+
+#### **Linux (Ubuntu/Debian-based)**
 ```bash
-https://cmake.org
+sudo apt update
+sudo apt install -y cmake build-essential python3-dev libopenblas-dev liblapack-dev libx11-dev
 ```
 
-Once you installed CMake, if this doesn't work.
+#### **MacOS**
 ```bash
-cmake --version
+brew install cmake
 ```
-That is, if cmake --version doesn't run from thesame terminal window from which you are reading this error message, then you have not installed cmake.  Windows users should take note that theyneed to tell the cmake installer to add cmake to their PATH.  Since you can't run commands that are not in your PATH.  This is how the PATH works on Linux as well, but failing to add cmake to the PATH is a particularly common problem on windows and rarely a problem on Linux.
 
+Once installed, try installing dependencies again:
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
 ---
 
@@ -87,7 +109,7 @@ Access the app at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 ---
 
-📁 ## Handling Static Files
+📝 ## Handling Static Files
 
 To collect static files (for production environments):
 ```bash
