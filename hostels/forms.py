@@ -24,6 +24,7 @@ class HostelForm(forms.ModelForm):
 
         return cleaned_data
 
+
 class RoomForm(forms.ModelForm):
     resident = forms.ModelChoiceField(
         queryset=CustomUser.objects.none(),  # Dynamically populated in `__init__`
@@ -42,15 +43,18 @@ class RoomForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(RoomForm, self).__init__(*args, **kwargs)
 
-        # Check if editing an existing room
+        # Allowed roles for residents
+        allowed_roles = ['student', 'lecturer', 'staff']
+
+        # If editing an existing room with an assigned resident
         if self.instance and self.instance.resident:
             self.fields['resident'].queryset = CustomUser.objects.filter(
-                models.Q(role='student') & 
+                models.Q(role__in=allowed_roles) &
                 (models.Q(rooms_assigned=None) | models.Q(id=self.instance.resident.id))
             )
             self.fields['resident'].initial = self.instance.resident
         else:
-            self.fields['resident'].queryset = CustomUser.objects.filter(role='student', rooms_assigned=None)
+            self.fields['resident'].queryset = CustomUser.objects.filter(role__in=allowed_roles, rooms_assigned=None)
 
         self.fields['resident'].label_from_instance = lambda obj: f"{obj.matric_id} - {obj.full_name or 'N/A'}"
 
