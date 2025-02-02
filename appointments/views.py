@@ -165,12 +165,34 @@ def report_health(request):
     today = localtime(now()).date()
     fourteen_days_ago = today - timedelta(days=14)
 
-    # ✅ Check for recent active appointments within the past 14 days
-    recent_appointment = Appointment.objects.filter(
-        resident=request.user, 
-        appointment_date__gte=fourteen_days_ago,
-        status__in=['Scheduled', 'Pending', 'Confirmed']
-    ).exists()
+    # ✅ Check for ongoing (scheduled) appointments
+    ongoing_appointment = Appointment.objects.filter(
+        resident=request.user,
+        status='Scheduled'
+    ).first()
+
+    # ✅ Check for last completed appointment in the last 14 days
+    last_completed_appointment = Appointment.objects.filter(
+        resident=request.user,
+        status='Completed',
+        appointment_date__gte=fourteen_days_ago
+    ).order_by('-appointment_date').first()
+
+    # ✅ Prevent new health report submission if a **scheduled** appointment already exists
+    if ongoing_appointment:
+        return render(request, 'appointments/report_health.html', {
+            'ongoing_appointment': ongoing_appointment,
+            'recent_appointment': None,
+            'last_completed_appointment': None
+        })
+
+    # ✅ Prevent booking a new appointment if a **completed** one exists within 14 days
+    if last_completed_appointment:
+        return render(request, 'appointments/report_health.html', {
+            'ongoing_appointment': None,
+            'recent_appointment': None,
+            'last_completed_appointment': last_completed_appointment
+        })
 
     if request.method == 'POST':
         has_symptoms = request.POST.get('has_symptoms', 'no')
@@ -178,10 +200,6 @@ def report_health(request):
         if has_symptoms == 'no':
             messages.success(request, "You are safe! Stay healthy!")
             return redirect('home')
-
-        if recent_appointment:
-            messages.warning(request, "You already have an active appointment within the last 14 days.")
-            return redirect('appointment_list')
 
         # ✅ Get next available slot for today
         available_time_slots = get_available_time_slots(today)
@@ -204,13 +222,16 @@ def report_health(request):
             appointment_date=today,
             appointment_time=appointment_time,
             result="Pending",
+            status="Scheduled",
         )
 
         messages.success(request, f"An appointment has been booked for {today} at {appointment_time}.")
         return redirect('appointment_list')
 
     return render(request, 'appointments/report_health.html', {
-        'recent_appointment': recent_appointment
+        'ongoing_appointment': None,
+        'recent_appointment': None,
+        'last_completed_appointment': None
     })
 
 ### APPOINTMENT MANAGEMENT ###
