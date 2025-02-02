@@ -1,10 +1,20 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 {% block title %}Home - eHealth System{% endblock %}
 
 {% block content %}
   <div class="container mt-4">
       <h1 class="text-center">Welcome to the eHealth System</h1>
+
+{% if user.infected_status == "infected" %}
+    <span class="health-status infected">
+        <h5 class="card-title">{{ user.full_name }}, You are Infected! ({{ user.health_status.infected_since }} -  {{ user.health_status.infected_since|add_days:14 }} )</h5>
+    </span>                               
+{% elif user.infected_status == "recovered" %}
+    <span class="health-status recovered">
+        <h5 class="card-title">{{ user.full_name }}, You are Recovered from Covid-19 ({{ user.health_status.infected_since }} - {{ user.health_status.infected_since|add_days:14 }})</h5>
+    </span>                               
+{% endif %}
 
       {% if user.is_authenticated %}
           {% if user.role == 'superadmin' or user.role == 'admin' %}

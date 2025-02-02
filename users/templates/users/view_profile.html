@@ -7,7 +7,17 @@
     <h2>My Profile</h2>
     <div class="card">
         <div class="card-body">
+        {% if user.infected_status == "infected" %}
+            <span class="health-status infected">
+                <h5 class="card-title">{{ user.full_name }}, You are Infected! ({{ user.health_status.infected_since }} -  {{ user.health_status.infected_since|add_days:14 }} )</h5>
+            </span>                               
+        {% elif user.infected_status == "recovered" %}
+            <span class="health-status recovered">
+                <h5 class="card-title">{{ user.full_name }}, You are Recovered from Covid-19 ({{ user.health_status.infected_since }} - {{ user.health_status.infected_since|add_days:14 }})</h5>
+            </span>
+        {% else %}  
             <h5 class="card-title">{{ user.full_name }}</h5>
+        {% endif %}
             <p class="card-text"><strong>Role:</strong> {{ user.role }}</p>
             <p class="card-text"><strong>Email:</strong> {{ user.email }}</p>
             <p class="card-text"><strong>Matric ID:</strong> {{ user.matric_id }}</p>
