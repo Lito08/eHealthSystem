@@ -1,4 +1,4 @@
-📌 eHealth System
+📌 eHealth System by Group Rolls Royce
 
 A Django-based system for managing COVID-19 quarantine tracking, appointments, and health monitoring for MMU residents.
 
@@ -27,7 +27,7 @@ A Django-based system for managing COVID-19 quarantine tracking, appointments, a
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/your-repo/eHealthSystem.git
+git clone https://github.com/Lito08/eHealthSystem.git
 cd eHealthSystem
 ```
 
@@ -42,12 +42,7 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3️⃣ Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3.1️⃣ Install CMake (Required for some dependencies)
+### 3️⃣ Install CMake (Required for some dependencies)
 
 Before proceeding, ensure **CMake** is installed:
 
@@ -75,11 +70,21 @@ sudo apt install -y cmake build-essential python3-dev libopenblas-dev liblapack-
 brew install cmake
 ```
 
+### 3️⃣.1️⃣ Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
 Once installed, try installing dependencies again:
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+**Still error?**
+
+Try Install Visual Studio with C++ Build Tools.
+During installation, make sure to select the Desktop development with C++ workload. This includes the necessary compilers and libraries for building extensions like dlib.
 
 ---
 
