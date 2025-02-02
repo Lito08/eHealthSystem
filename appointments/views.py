@@ -6,6 +6,7 @@ from hostels.models import Hostel, Room, ResidentHealthStatus
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import datetime, time, timedelta
+from django.utils.timezone import localtime
 from django.utils.timezone import now
 
 ### HELPERS ###
@@ -31,7 +32,7 @@ def get_available_time_slots(appointment_date):
 ### AJAX ENDPOINT ###
 @login_required
 def get_available_slots(request):
-    """Fetch available time slots for a selected date and resident."""
+    """Fetch available time slots for booking and editing an appointment."""
     resident_id = request.GET.get('resident_id')
     appointment_date = request.GET.get('appointment_date')
     appointment_id = request.GET.get('appointment_id', None)  # Get appointment ID if provided
@@ -44,21 +45,50 @@ def get_available_slots(request):
     except CustomUser.DoesNotExist:
         return JsonResponse({"error": "Resident not found"}, status=404)
 
-    two_weeks_ago = now().date() - timedelta(days=14)
+    # ✅ Ensure we use the correct timezone-aware local time
+    local_now = localtime(now())  # Converts UTC time to 'Asia/Kuala_Lumpur'
+    today = local_now.date()
+    current_time = local_now.time()  # Get the correct local time
+
+    # Convert appointment_date to a date object
+    try:
+        appointment_date_obj = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+    except ValueError:
+        return JsonResponse({"error": "Invalid date format"}, status=400)
+
+    # ✅ Prevent booking/editing today if it's past 8 PM
+    if appointment_date_obj == today and current_time >= time(20, 0):
+        return JsonResponse({"error": "Appointments cannot be booked after 8 PM today."}, status=403)
+
+    two_weeks_ago = today - timedelta(days=14)
 
     # ✅ Ignore the current appointment when checking for active appointments
     has_recent_unfinished_appointment = Appointment.objects.filter(
         resident=resident,
         appointment_date__gte=two_weeks_ago,
         status__in=['Scheduled', 'Pending', 'Confirmed']
-    ).exclude(appointment_id=appointment_id)  # **This Fix: Ignore the same appointment**
-    has_recent_unfinished_appointment = has_recent_unfinished_appointment.exists()
+    ).exclude(appointment_id=appointment_id).exists()
 
     if has_recent_unfinished_appointment:
         return JsonResponse({"error": "Resident already has an active appointment within the last 14 days"}, status=403)
 
-    # ✅ Fetch available slots for the selected date
-    available_time_slots = get_available_time_slots(appointment_date)
+    # ✅ Fetch booked slots for the selected date & clinic
+    booked_slots = set(
+        Appointment.objects.filter(appointment_date=appointment_date_obj)
+        .values_list('appointment_time', flat=True)
+    )
+
+    # ✅ Generate all 15-minute slots from 8 AM to 8 PM
+    all_time_slots = [
+        (datetime.combine(today, time(8, 0)) + timedelta(minutes=15 * i)).strftime("%H:%M")
+        for i in range(48)  # 48 slots from 8:00 AM to 8:00 PM
+    ]
+
+    # ✅ Remove booked slots AND prevent past time selection for today
+    available_time_slots = [
+        slot for slot in all_time_slots
+        if slot not in booked_slots and (appointment_date_obj > today or slot >= current_time.strftime("%H:%M"))
+    ]
 
     return JsonResponse({"available_time_slots": available_time_slots})
 
@@ -74,10 +104,11 @@ def book_appointment(request):
     today = now().date()
     fourteen_days_ago = today - timedelta(days=14)
 
-    # ✅ **Include all residents (students, lecturers, staff) who have not had an appointment in 14 days**
+    # ✅ **Filter residents who haven't had an appointment in the last 14 days**
+    # ✅ **Exclude admins and superadmins from selection**
     residents = CustomUser.objects.exclude(
         role__in=['admin', 'superadmin']
-        ).exclude(
+    ).exclude(
         id__in=Appointment.objects.filter(
             appointment_date__gte=fourteen_days_ago
         ).values_list('resident_id', flat=True)
@@ -95,6 +126,12 @@ def book_appointment(request):
             return redirect('book_appointment')
 
         resident = get_object_or_404(CustomUser, id=resident_id)
+
+        # ✅ Ensure only valid residents can book
+        if resident.role in ['admin', 'superadmin']:
+            messages.error(request, "Admins are not allowed to book appointments.")
+            return redirect('book_appointment')
+
         appointment_date_obj = datetime.strptime(appointment_date, "%Y-%m-%d").date()
 
         # ✅ **Check if the selected time is actually available**
@@ -102,6 +139,12 @@ def book_appointment(request):
             messages.error(request, "The selected time slot is not available. Please choose another time.")
             return redirect('book_appointment')
 
+        # ✅ **Check if another appointment already exists at the same time**
+        if Appointment.objects.filter(appointment_date=appointment_date, appointment_time=appointment_time, clinic=clinic).exists():
+            messages.error(request, "This time slot is already booked by another resident. Please choose another time.")
+            return redirect('book_appointment')
+
+        # ✅ **Create the appointment**
         Appointment.objects.create(
             resident=resident,
             clinic=clinic,
