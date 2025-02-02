@@ -42,7 +42,7 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3.1️⃣ Install CMake (Required for some dependencies)
+### 3️⃣ Install CMake (Required for some dependencies)
 
 Before proceeding, ensure **CMake** is installed:
 
@@ -70,7 +70,7 @@ sudo apt install -y cmake build-essential python3-dev libopenblas-dev liblapack-
 brew install cmake
 ```
 
-### 3️⃣ Install dependencies
+### 3️⃣.1️⃣ Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
