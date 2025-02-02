@@ -21,11 +21,9 @@
             <div class="mb-3">
                 <label for="appointment_time" class="form-label">Appointment Time:</label>
                 <select id="appointment_time" name="appointment_time" class="form-select" required>
-                    {% for slot in available_time_slots %}
-                        <option value="{{ slot }}" {% if slot == appointment.appointment_time|time:"H:i" %}selected{% endif %}>
-                            {{ slot }}
-                        </option>
-                    {% endfor %}
+                    <option value="{{ appointment.appointment_time|time:'H:i' }}" selected>
+                        {{ appointment.appointment_time|time:'H:i' }}
+                    </option>
                 </select>
             </div>
 
@@ -49,9 +47,9 @@
         let timeField = document.getElementById("appointment_time");
         let errorMessage = document.getElementById("error-message");
         let submitButton = document.getElementById("submit-button");
-        let residentId = "{{ appointment.resident.id }}"; // Resident ID
-        let appointmentId = "{{ appointment.appointment_id }}"; // Current appointment ID
-        let currentSelectedTime = "{{ appointment.appointment_time|time:'H:i' }}"; // Previously selected time
+        let residentId = "{{ appointment.resident.id }}";  // Resident ID
+        let appointmentId = "{{ appointment.appointment_id }}";  // Current appointment ID
+        let currentSelectedTime = "{{ appointment.appointment_time|time:'H:i' }}";  // Previously selected time
 
         function updateAvailableSlots() {
             let selectedDate = dateField.value;
@@ -66,7 +64,7 @@
             fetch(`/appointments/get-available-slots/?resident_id=${residentId}&appointment_date=${selectedDate}&appointment_id=${appointmentId}`)
                 .then(response => response.json())
                 .then(data => {
-                    timeField.innerHTML = ''; // Clear existing options
+                    timeField.innerHTML = '';  // Clear existing options
 
                     if (data.error) {
                         alert(data.error);
@@ -84,14 +82,6 @@
                     errorMessage.classList.add("d-none");
                     submitButton.disabled = false;
 
-                    // Add a default option
-                    let defaultOption = document.createElement("option");
-                    defaultOption.value = "";
-                    defaultOption.disabled = true;
-                    defaultOption.selected = true;
-                    defaultOption.textContent = "Select a time slot";
-                    timeField.appendChild(defaultOption);
-
                     // Populate available time slots
                     data.available_time_slots.forEach(slot => {
                         let option = document.createElement("option");
@@ -108,7 +98,7 @@
 
                     // If the previous time is no longer available, reset selection
                     if (!data.available_time_slots.includes(currentSelectedTime)) {
-                        timeField.selectedIndex = 0; // Select the "Select a time slot" option
+                        timeField.selectedIndex = 0;  // Select the "Select a time slot" option
                     }
                 })
                 .catch(error => {

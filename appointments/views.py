@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from .models import Appointment, Clinic
@@ -6,8 +7,7 @@ from hostels.models import Hostel, Room, ResidentHealthStatus
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import datetime, time, timedelta
-from django.utils.timezone import localtime
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 
 ### HELPERS ###
 def generate_time_slots():
@@ -45,12 +45,10 @@ def get_available_slots(request):
     except CustomUser.DoesNotExist:
         return JsonResponse({"error": "Resident not found"}, status=404)
 
-    # ✅ Ensure we use the correct timezone-aware local time
-    local_now = localtime(now())  # Converts UTC time to 'Asia/Kuala_Lumpur'
+    local_now = localtime(now())  # Ensure correct local time
     today = local_now.date()
-    current_time = local_now.time()  # Get the correct local time
+    current_time = local_now.time()
 
-    # Convert appointment_date to a date object
     try:
         appointment_date_obj = datetime.strptime(appointment_date, "%Y-%m-%d").date()
     except ValueError:
@@ -60,21 +58,11 @@ def get_available_slots(request):
     if appointment_date_obj == today and current_time >= time(20, 0):
         return JsonResponse({"error": "Appointments cannot be booked after 8 PM today."}, status=403)
 
-    two_weeks_ago = today - timedelta(days=14)
-
-    # ✅ Ignore the current appointment when checking for active appointments
-    has_recent_unfinished_appointment = Appointment.objects.filter(
-        resident=resident,
-        appointment_date__gte=two_weeks_ago,
-        status__in=['Scheduled', 'Pending', 'Confirmed']
-    ).exclude(appointment_id=appointment_id).exists()
-
-    if has_recent_unfinished_appointment:
-        return JsonResponse({"error": "Resident already has an active appointment within the last 14 days"}, status=403)
-
-    # ✅ Fetch booked slots for the selected date & clinic
+    # ✅ Fetch booked slots, excluding the current appointment if editing
     booked_slots = set(
-        Appointment.objects.filter(appointment_date=appointment_date_obj)
+        Appointment.objects.filter(
+            appointment_date=appointment_date_obj
+        ).exclude(appointment_id=appointment_id)
         .values_list('appointment_time', flat=True)
     )
 
@@ -84,7 +72,7 @@ def get_available_slots(request):
         for i in range(48)  # 48 slots from 8:00 AM to 8:00 PM
     ]
 
-    # ✅ Remove booked slots AND prevent past time selection for today
+    # ✅ Remove booked slots and prevent selecting past time for today
     available_time_slots = [
         slot for slot in all_time_slots
         if slot not in booked_slots and (appointment_date_obj > today or slot >= current_time.strftime("%H:%M"))
@@ -172,13 +160,15 @@ def report_health(request):
         messages.error(request, "No clinic available for appointments. Please contact admin.")
         return redirect('home')
 
-    today = now().date()
+    # ✅ Get correct timezone-aware local date
+    today = localtime(now()).date()
     fourteen_days_ago = today - timedelta(days=14)
 
-    # Check for recent appointments within the past 14 days
+    # ✅ Check for recent active appointments within the past 14 days
     recent_appointment = Appointment.objects.filter(
         resident=request.user, 
-        appointment_date__gte=fourteen_days_ago
+        appointment_date__gte=fourteen_days_ago,
+        status__in=['Scheduled', 'Pending', 'Confirmed']
     ).exists()
 
     if request.method == 'POST':
@@ -189,18 +179,24 @@ def report_health(request):
             return redirect('home')
 
         if recent_appointment:
-            messages.warning(request, "You already have an appointment within the last 14 days.")
+            messages.warning(request, "You already have an active appointment within the last 14 days.")
             return redirect('appointment_list')
 
-        # Get next available slot
+        # ✅ Get next available slot for today
         available_time_slots = get_available_time_slots(today)
+
         if not available_time_slots:
             messages.error(request, "No available time slots today. Please try tomorrow.")
             return redirect('appointment_list')
 
-        appointment_time = available_time_slots[0]  # Pick the first available slot
+        appointment_time = available_time_slots[0]  # ✅ Pick the first available slot
 
-        # Create an appointment
+        # ✅ Ensure the slot is actually available before booking
+        if Appointment.objects.filter(appointment_date=today, appointment_time=appointment_time, clinic=clinic).exists():
+            messages.error(request, "This time slot is no longer available. Please try another time.")
+            return redirect('appointment_list')
+
+        # ✅ Create an appointment
         Appointment.objects.create(
             resident=request.user,
             clinic=clinic,
@@ -224,13 +220,19 @@ def manage_appointments(request):
         messages.error(request, "You are not authorized to manage appointments.")
         return redirect('home')
 
+    # ✅ Ensure correct timezone-aware date
+    today = localtime(now()).date()
+
+    # ✅ Fetch all appointments, sorting them by date & time
     all_appointments = Appointment.objects.all().order_by('appointment_date', 'appointment_time')
-    ongoing_appointments = all_appointments.filter(status='Scheduled')
+
+    # ✅ Filter only ongoing (Scheduled & Pending) appointments for active management
+    ongoing_appointments = all_appointments.filter(status__in=['Scheduled', 'Pending'])
 
     return render(request, 'appointments/manage_appointments.html', {
         'all_appointments': all_appointments,
         'ongoing_appointments': ongoing_appointments,
-        'today': now().date()
+        'today': today
     })
 
 @login_required
@@ -248,6 +250,10 @@ def edit_appointment(request, appointment_id):
         messages.error(request, "You are not authorized to edit appointments.")
         return redirect('appointment_list')
 
+    clinic = appointment.clinic
+    today = localtime(now()).date()
+    current_time = localtime(now()).time()
+
     if request.method == 'POST':
         appointment_date = request.POST.get('appointment_date')
         appointment_time = request.POST.get('appointment_time')
@@ -256,21 +262,49 @@ def edit_appointment(request, appointment_id):
             messages.error(request, "Both date and time are required.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
-        appointment_date_obj = datetime.strptime(appointment_date, "%Y-%m-%d").date()
-
-        # ✅ **Check if the selected time is actually available**
-        if appointment_time not in get_available_time_slots(appointment_date_obj):
-            messages.error(request, "The selected time slot is not available. Please choose another time.")
+        try:
+            appointment_date_obj = datetime.strptime(appointment_date, "%Y-%m-%d").date()
+        except ValueError:
+            messages.error(request, "Invalid date format.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
-        appointment.appointment_date = appointment_date
+        # ✅ **Ensure no past time slots are selected for today**
+        if appointment_date_obj == today and appointment_time < current_time.strftime("%H:%M"):
+            messages.error(request, "You cannot select a past time slot for today.")
+            return redirect('edit_appointment', appointment_id=appointment_id)
+
+        # ✅ **Check if the selected time slot is actually available**
+        booked_slots = set(
+            Appointment.objects.filter(appointment_date=appointment_date_obj, clinic=clinic)
+            .exclude(appointment_id=appointment_id)
+            .values_list('appointment_time', flat=True)
+        )
+
+        if appointment_time in booked_slots:
+            messages.error(request, "The selected time slot is already booked. Please choose another time.")
+            return redirect('edit_appointment', appointment_id=appointment_id)
+
+        # ✅ **Update appointment**
+        appointment.appointment_date = appointment_date_obj
         appointment.appointment_time = appointment_time
         appointment.save()
 
         messages.success(request, "Appointment updated successfully.")
         return redirect('manage_appointments')
 
-    available_time_slots = get_available_time_slots(appointment.appointment_date)
+    # ✅ **Get available time slots excluding fully booked ones**
+    booked_slots = set(
+        Appointment.objects.filter(appointment_date=appointment.appointment_date, clinic=clinic)
+        .exclude(appointment_id=appointment_id)
+        .values_list('appointment_time', flat=True)
+    )
+
+    all_time_slots = [
+        (datetime.combine(today, time(8, 0)) + timedelta(minutes=15 * i)).strftime("%H:%M")
+        for i in range(48)  # Slots from 8 AM to 8 PM
+    ]
+
+    available_time_slots = [slot for slot in all_time_slots if slot not in booked_slots]
 
     return render(request, 'appointments/edit_appointment.html', {
         'appointment': appointment,
