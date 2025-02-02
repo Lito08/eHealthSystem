@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import datetime, time, timedelta
 from django.utils.timezone import localtime, now
+from django.contrib.messages import get_messages
 
 ### HELPERS ###
 def generate_time_slots():
@@ -220,13 +221,12 @@ def manage_appointments(request):
         messages.error(request, "You are not authorized to manage appointments.")
         return redirect('home')
 
-    # ✅ Ensure correct timezone-aware date
+    # ✅ Clear old messages before rendering to prevent previous errors from showing
+    storage = get_messages(request)
+    list(storage)  # Consuming messages so they don't persist
+
     today = localtime(now()).date()
-
-    # ✅ Fetch all appointments, sorting them by date & time
     all_appointments = Appointment.objects.all().order_by('appointment_date', 'appointment_time')
-
-    # ✅ Filter only ongoing (Scheduled & Pending) appointments for active management
     ongoing_appointments = all_appointments.filter(status__in=['Scheduled', 'Pending'])
 
     return render(request, 'appointments/manage_appointments.html', {

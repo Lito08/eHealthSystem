@@ -4,12 +4,14 @@
 {% block content %}
 <h2 class="text-center">Manage Appointments</h2>
 
-<!-- ✅ Success/Error Messages -->
+<!-- ✅ Display Only Relevant Messages -->
 {% if messages %}
     {% for message in messages %}
-        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
-            {{ message }}
-        </div>
+        {% if "appointment" in message.message.lower %}  {# Show only appointment-related messages #}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
+                {{ message }}
+            </div>
+        {% endif %}
     {% endfor %}
 {% endif %}
 
