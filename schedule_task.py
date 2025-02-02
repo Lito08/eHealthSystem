@@ -24,4 +24,4 @@ print("Scheduler started...")
 
 while True:
     schedule.run_pending()
-    time.sleep(60)  # Check every minute
+    time.sleep(10)  # Check every minute
