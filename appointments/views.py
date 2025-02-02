@@ -335,7 +335,6 @@ def update_appointment_result(request, appointment_id):
 
     return render(request, 'appointments/update_result.html', {'appointment': appointment})
 
-
 def relocate_resident_to_quarantine(resident):
     """
     Relocates infected residents to an available quarantine room in an infected hostel.

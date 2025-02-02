@@ -39,13 +39,13 @@
                 <!-- Appointment Date -->
                 <div class="mb-3">
                     <label for="appointment_date" class="form-label">Select Date:</label>
-                    <input type="date" class="form-control" name="appointment_date" min="{{ today|date:'Y-m-d' }}" required>
+                    <input type="date" class="form-control" name="appointment_date" id="appointment_date" min="{{ today|date:'Y-m-d' }}" required>
                 </div>
 
                 <!-- Appointment Time -->
                 <div class="mb-3">
                     <label for="appointment_time" class="form-label">Select Time:</label>
-                    <select class="form-select" name="appointment_time" required>
+                    <select class="form-select" name="appointment_time" id="appointment_time" required>
                         <option value="" disabled selected>Select a time slot</option>
                         {% for slot in available_time_slots %}
                             <option value="{{ slot }}">{{ slot }}</option>
@@ -63,4 +63,37 @@
         {% endif %}
     </div>
 </div>
+
+<!-- JavaScript to dynamically update available time slots -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let dateField = document.getElementById("appointment_date");
+        let timeField = document.getElementById("appointment_time");
+
+        let today = new Date().toISOString().split('T')[0];
+        let now = new Date();
+        let currentHours = now.getHours();
+        let currentMinutes = now.getMinutes();
+        let currentTime = (currentHours < 10 ? "0" : "") + currentHours + ":" + (currentMinutes < 10 ? "0" : "") + currentMinutes;
+
+        function updateTimeSlots() {
+            let selectedDate = dateField.value;
+            let timeOptions = timeField.getElementsByTagName("option");
+
+            for (let option of timeOptions) {
+                let optionTime = option.value;
+
+                if (selectedDate === today && optionTime <= currentTime) {
+                    option.style.display = "none";  // Hide past time slots for today
+                } else {
+                    option.style.display = "block"; // Show all slots for future dates
+                }
+            }
+        }
+
+        dateField.addEventListener("change", updateTimeSlots);
+        updateTimeSlots();  // Ensure correct slots are displayed on page load
+    });
+</script>
+
 {% endblock %}
