@@ -195,15 +195,23 @@ def update_user(request, user_id):
 
 @login_required
 def clear_room(request, user_id):
+    """Allows superadmins and admins to remove a resident from their assigned room properly."""
     if request.user.role not in ['superadmin', 'admin']:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
     user = get_object_or_404(CustomUser, id=user_id)
+    
+    # Find the room assigned to the user
     room = Room.objects.filter(resident=user).first()
     if room:
-        room.resident = None
+        room.resident = None  # Remove resident from the room
         room.save()
-    return JsonResponse({'message': 'Room cleared successfully'})
+
+    # Properly update the user's room reference
+    user.rooms_assigned.clear()  # This ensures no room is linked to the user
+    user.save()
+
+    return JsonResponse({'message': f"{user.full_name}'s room has been cleared successfully."})
 
 @login_required
 def delete_user(request, user_id):
