@@ -92,24 +92,32 @@ def edit_room(request, room_id):
             new_resident = form.cleaned_data.get('resident')
             clear_resident = form.cleaned_data.get('clear_resident')
 
-            # Clear the existing room assignment if the resident is removed
-            if clear_resident:
-                if room.resident:
-                    room.resident.rooms_assigned.clear()
-                room.resident = None
+            # Clear existing resident assignment properly
+            if clear_resident and room.resident:
+                # Remove the resident from their assigned room
+                previous_resident = room.resident
+                previous_resident.rooms_assigned.clear()  # Remove previous room association
+                previous_resident.save()
+
+                room.resident = None  # Remove resident from the room itself
+                room.save()
+                messages.success(request, f"Resident cleared from Room '{room.number}'.")
+
             else:
                 # Ensure that if a resident is moved, they are removed from their old room
-                if new_resident and new_resident.rooms_assigned.exists():
-                    previous_room = new_resident.rooms_assigned.first()
-                    if previous_room.id != room.id:
+                if new_resident:
+                    previous_room = Room.objects.filter(resident=new_resident).first()
+                    if previous_room and previous_room.id != room.id:
                         previous_room.resident = None
                         previous_room.save()
 
-                room.resident = new_resident
+                    # Assign the resident to the new room
+                    room.resident = new_resident
+                    room.save()
+                    messages.success(request, f"Room '{room.number}' updated successfully!")
 
-            room.save()
-            messages.success(request, f"Room '{room.number}' updated successfully!")
             return redirect('room_list', hostel_id=room.hostel.id)
+
     else:
         form = RoomForm(instance=room)
 
