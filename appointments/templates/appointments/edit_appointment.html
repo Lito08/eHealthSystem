@@ -9,30 +9,121 @@
     <div class="card-body">
         <form method="post">
             {% csrf_token %}
-            
+
+            <!-- Appointment Date -->
             <div class="mb-3">
               <label for="appointment_date" class="form-label">Appointment Date:</label>
               <input type="date" class="form-control" id="appointment_date" name="appointment_date"
                      value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
             </div>          
 
+            <!-- Appointment Time -->
             <div class="mb-3">
                 <label for="appointment_time" class="form-label">Appointment Time:</label>
                 <select id="appointment_time" name="appointment_time" class="form-select" required>
-                    {% for time in time_slots %}
-                        <option value="{{ time|time:'H:i' }}" {% if time == appointment.appointment_time %}selected{% endif %}>
-                            {{ time|time:'H:i' }}
+                    {% for slot in available_time_slots %}
+                        <option value="{{ slot }}" {% if slot == appointment.appointment_time|time:"H:i" %}selected{% endif %}>
+                            {{ slot }}
                         </option>
                     {% endfor %}
                 </select>
-              </div>
-                        
+            </div>
 
+            <!-- Error Message for No Available Slots -->
+            <div id="error-message" class="alert alert-danger d-none">
+                No available time slots for the selected date. Please choose another date.
+            </div>
+
+            <!-- Submit & Cancel Buttons -->
             <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-success">Update Appointment</button>
+                <button type="submit" id="submit-button" class="btn btn-success">Update Appointment</button>
                 <a href="{% url 'manage_appointments' %}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let dateField = document.getElementById("appointment_date");
+        let timeField = document.getElementById("appointment_time");
+        let errorMessage = document.getElementById("error-message");
+        let submitButton = document.getElementById("submit-button");
+        let residentId = "{{ appointment.resident.id }}"; // Resident ID
+        let appointmentId = "{{ appointment.appointment_id }}"; // Current appointment ID
+        let currentSelectedTime = "{{ appointment.appointment_time|time:'H:i' }}"; // Previously selected time
+
+        function updateAvailableSlots() {
+            let selectedDate = dateField.value;
+
+            if (!selectedDate) {
+                timeField.innerHTML = '<option value="" disabled selected>Select a time slot</option>';
+                errorMessage.classList.add("d-none");
+                submitButton.disabled = false;
+                return;
+            }
+
+            fetch(`/appointments/get-available-slots/?resident_id=${residentId}&appointment_date=${selectedDate}&appointment_id=${appointmentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    timeField.innerHTML = ''; // Clear existing options
+
+                    if (data.error) {
+                        alert(data.error);
+                        errorMessage.classList.remove("d-none");
+                        submitButton.disabled = true;
+                        return;
+                    }
+
+                    if (data.available_time_slots.length === 0) {
+                        errorMessage.classList.remove("d-none");
+                        submitButton.disabled = true;
+                        return;
+                    }
+
+                    errorMessage.classList.add("d-none");
+                    submitButton.disabled = false;
+
+                    // Add a default option
+                    let defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.disabled = true;
+                    defaultOption.selected = true;
+                    defaultOption.textContent = "Select a time slot";
+                    timeField.appendChild(defaultOption);
+
+                    // Populate available time slots
+                    data.available_time_slots.forEach(slot => {
+                        let option = document.createElement("option");
+                        option.value = slot;
+                        option.textContent = slot;
+
+                        // Keep the previously selected time if still available
+                        if (slot === currentSelectedTime) {
+                            option.selected = true;
+                        }
+
+                        timeField.appendChild(option);
+                    });
+
+                    // If the previous time is no longer available, reset selection
+                    if (!data.available_time_slots.includes(currentSelectedTime)) {
+                        timeField.selectedIndex = 0; // Select the "Select a time slot" option
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching time slots:", error);
+                    errorMessage.classList.remove("d-none");
+                    submitButton.disabled = true;
+                });
+        }
+
+        // Load available slots when date is changed
+        dateField.addEventListener("change", updateAvailableSlots);
+
+        // Load available slots initially for the current date
+        updateAvailableSlots();
+    });
+</script>
+
 {% endblock %}

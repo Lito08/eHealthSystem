@@ -22,7 +22,7 @@
                 <!-- Select Resident -->
                 <div class="mb-3">
                     <label for="resident" class="form-label">Select Resident:</label>
-                    <select class="form-select" name="resident" required>
+                    <select class="form-select" name="resident" id="resident" required>
                         <option value="" disabled selected>Select a resident</option>
                         {% for resident in residents %}
                             <option value="{{ resident.id }}">{{ resident.full_name }} ({{ resident.matric_id }})</option>
@@ -48,7 +48,7 @@
                     <select class="form-select" name="appointment_time" id="appointment_time" required>
                         <option value="" disabled selected>Select a time slot</option>
                         {% for slot in available_time_slots %}
-                            <option value="{{ slot }}">{{ slot }}</option>
+                            <option value="{{ slot }}">{{ slot }}</option>  <!-- Now ensures proper HH:MM format -->
                         {% endfor %}
                     </select>
                 </div>
@@ -64,36 +64,44 @@
     </div>
 </div>
 
-<!-- JavaScript to dynamically update available time slots -->
+<!-- JavaScript for AJAX -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let dateField = document.getElementById("appointment_date");
         let timeField = document.getElementById("appointment_time");
+        let residentField = document.querySelector("select[name='resident']");
 
-        function updateTimeSlots() {
+        function updateAvailableSlots() {
             let selectedDate = dateField.value;
-            let now = new Date();
-            let currentHours = now.getHours();
-            let currentMinutes = now.getMinutes();
-            let currentTime = (currentHours < 10 ? "0" : "") + currentHours + ":" + 
-                              (currentMinutes < 10 ? "0" : "") + currentMinutes;
-            let today = now.toISOString().split('T')[0];
+            let selectedResident = residentField.value;
 
-            let timeOptions = timeField.getElementsByTagName("option");
-
-            for (let option of timeOptions) {
-                let optionTime = option.value;
-
-                if (selectedDate === today && optionTime <= currentTime) {
-                    option.style.display = "none";  // Hide past time slots for today
-                } else {
-                    option.style.display = "block"; // Show all slots for future dates
-                }
+            if (!selectedDate || !selectedResident) {
+                timeField.innerHTML = '<option value="" disabled selected>Select a time slot</option>';
+                return;
             }
+
+            fetch(`/appointments/get-available-slots/?resident_id=${selectedResident}&appointment_date=${selectedDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    timeField.innerHTML = '<option value="" disabled selected>Select a time slot</option>';
+
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    data.available_time_slots.forEach(slot => {
+                        let option = document.createElement("option");
+                        option.value = slot;
+                        option.textContent = slot;
+                        timeField.appendChild(option);
+                    });
+                })
+                .catch(error => console.error("Error fetching time slots:", error));
         }
 
-        dateField.addEventListener("change", updateTimeSlots);
-        updateTimeSlots();  // Ensure correct slots are displayed on page load
+        dateField.addEventListener("change", updateAvailableSlots);
+        residentField.addEventListener("change", updateAvailableSlots);
     });
 </script>
 
