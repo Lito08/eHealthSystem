@@ -27,7 +27,7 @@ A Django-based system for managing COVID-19 quarantine tracking, appointments, a
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/your-repo/eHealthSystem.git
+git clone https://github.com/Lito08/eHealthSystem.git
 cd eHealthSystem
 ```
 
