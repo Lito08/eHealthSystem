@@ -319,34 +319,33 @@ def update_appointment_result(request, appointment_id):
             messages.error(request, "Invalid result selection.")
             return redirect('manage_appointments')
 
+        # Update appointment result and status
         appointment.result = result
         appointment.status = 'Completed'
         appointment.save()
 
         # If result is positive, mark resident as infected and relocate them
         if result == 'Positive':
-            if hasattr(appointment.resident, 'mark_infected'):
-                appointment.resident.mark_infected(request)  # Pass request object
-            else:
-                messages.warning(request, f"{appointment.resident.full_name} does not have an `infected_status` attribute.")
+            appointment.resident.mark_infected(request)  # Ensure request is passed
+            relocate_resident_to_quarantine(request, appointment.resident)  # ✅ Fix: Now passing `request`
 
-        messages.success(request, "Appointment result updated successfully.")
+        messages.success(request, f"Appointment result updated successfully: {result}.")
         return redirect('manage_appointments')
 
     return render(request, 'appointments/update_result.html', {'appointment': appointment})
 
-def relocate_resident_to_quarantine(resident):
+def relocate_resident_to_quarantine(request, resident):
     """
     Relocates infected residents to an available quarantine room in an infected hostel.
     If no infected hostel is available, an admin must assign them manually.
     """
     if not resident.rooms_assigned.exists():
-        messages.warning(None, f"{resident.full_name} is not a resident and will not be quarantined.")
+        messages.warning(request, f"{resident.full_name} is not a resident and will not be quarantined.")
         return
 
     infected_hostel = Hostel.objects.filter(is_infected_hostel=True).first()
     if not infected_hostel:
-        messages.warning(None, "No infected hostel available. Please assign manually.")
+        messages.warning(request, "No infected hostel available. Please assign manually.")
         return
 
     available_room = Room.objects.filter(hostel=infected_hostel, resident__isnull=True).first()
@@ -368,11 +367,11 @@ def relocate_resident_to_quarantine(resident):
         available_room.resident = resident
         available_room.save()
 
-        messages.success(None, f"{resident.full_name} has been relocated to quarantine in {infected_hostel.name}.")
+        messages.success(request, f"{resident.full_name} has been relocated to quarantine in {infected_hostel.name}.")
     else:
-        messages.warning(None, "No available quarantine rooms.")
+        messages.warning(request, "No available quarantine rooms.")
 
-def mark_recovered():
+def mark_recovered(request):
     """
     Automatically marks infected residents as recovered after 14 days and moves them back to their original room.
     """
@@ -401,6 +400,6 @@ def mark_recovered():
             resident.infected_status = "recovered"
             resident.save()
 
-            messages.success(None, f"{resident.full_name} has recovered and returned to their original room.")
+            messages.success(request, f"{resident.full_name} has recovered and returned to their original room.")
         else:
-            messages.warning(None, f"{resident.full_name} cannot be relocated yet. Their original room is occupied.")
+            messages.warning(request, f"{resident.full_name} cannot be relocated yet. Their original room is occupied.")

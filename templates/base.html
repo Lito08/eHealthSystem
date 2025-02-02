@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,7 +85,6 @@
     </style>
 </head>
 <body>
-
     <!-- Sidebar -->
     {% if user.is_authenticated %}
     <div class="sidebar p-3" id="sidebar">
@@ -121,6 +121,15 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-person-circle"></i> {{ user.full_name }}
+                                {% if user.infected_status == "infected" %}
+                                    <span class="health-status infected">
+                                        Infected ({{ user.health_status.infected_since }} -  {{ user.health_status.infected_since|add_days:14 }} )
+                                    </span>                               
+                                {% elif user.infected_status == "recovered" %}
+                                    <span class="health-status recovered">
+                                        Recovered ({{ user.health_status.infected_since }} - {{ user.health_status.infected_since|add_days:14 }})
+                                    </span>                               
+                                {% endif %}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{% url 'view_profile' %}"><i class="bi bi-person"></i> View Profile</a></li>
