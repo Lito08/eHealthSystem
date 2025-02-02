@@ -62,18 +62,20 @@ class RoomForm(forms.ModelForm):
     def save(self, commit=True):
         room = super(RoomForm, self).save(commit=False)
 
-        # Handle clearing the assigned resident
+        # Handle clearing the assigned resident properly
         if self.cleaned_data.get('clear_resident'):
-            room.resident = None
+            if room.resident:  # Check if a resident exists before clearing
+                room.resident.rooms_assigned.clear()  # Remove room assignment
+            room.resident = None  # Ensure the resident field is set to None
         else:
-            room.resident = self.cleaned_data.get('resident')
+            new_resident = self.cleaned_data.get('resident')
+            if new_resident:
+                if new_resident.rooms_assigned.exists():
+                    new_resident.rooms_assigned.clear()  # Remove previous room assignment
+                new_resident.rooms_assigned.add(room)  # Assign new room
+                room.resident = new_resident
 
         if commit:
             room.save()
-
-            # If assigning a resident, clear their previous room assignment
-            if self.cleaned_data.get('resident'):
-                self.cleaned_data['resident'].rooms_assigned.clear()
-                self.cleaned_data['resident'].rooms_assigned.add(room)
 
         return room
