@@ -32,10 +32,10 @@ def get_available_time_slots(appointment_date):
 ### AJAX ENDPOINT ###
 @login_required
 def get_available_slots(request):
-    """Fetch available time slots for booking and editing an appointment."""
+    """Fetch available time slots for both booking and editing an appointment."""
     resident_id = request.GET.get('resident_id')
     appointment_date = request.GET.get('appointment_date')
-    appointment_id = request.GET.get('appointment_id', None)  # Get appointment ID if provided
+    appointment_id = request.GET.get('appointment_id', None)  # Current appointment ID for editing
 
     if not resident_id or not appointment_date:
         return JsonResponse({"error": "Missing parameters"}, status=400)
@@ -45,7 +45,7 @@ def get_available_slots(request):
     except CustomUser.DoesNotExist:
         return JsonResponse({"error": "Resident not found"}, status=404)
 
-    local_now = localtime(now())  # Ensure correct local time
+    local_now = localtime(now())  # Get current local time
     today = local_now.date()
     current_time = local_now.time()
 
@@ -72,7 +72,7 @@ def get_available_slots(request):
         for i in range(48)  # 48 slots from 8:00 AM to 8:00 PM
     ]
 
-    # ✅ Remove booked slots and prevent selecting past time for today
+    # ✅ Remove booked slots and prevent selecting past times for today
     available_time_slots = [
         slot for slot in all_time_slots
         if slot not in booked_slots and (appointment_date_obj > today or slot >= current_time.strftime("%H:%M"))
@@ -268,31 +268,34 @@ def edit_appointment(request, appointment_id):
             messages.error(request, "Invalid date format.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
-        # ✅ **Ensure no past time slots are selected for today**
+        # ✅ Prevent selecting past time slots for today
         if appointment_date_obj == today and appointment_time < current_time.strftime("%H:%M"):
             messages.error(request, "You cannot select a past time slot for today.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
-        # ✅ **Check if the selected time slot is actually available**
-        booked_slots = set(
-            Appointment.objects.filter(appointment_date=appointment_date_obj, clinic=clinic)
-            .exclude(appointment_id=appointment_id)
-            .values_list('appointment_time', flat=True)
-        )
+        # ✅ Ensure the selected slot is available by excluding the current appointment
+        existing_appointment = Appointment.objects.filter(
+            appointment_date=appointment_date_obj,
+            appointment_time=appointment_time,
+            clinic=clinic
+        ).exclude(appointment_id=appointment_id).exists()
 
-        if appointment_time in booked_slots:
+        if existing_appointment:
             messages.error(request, "The selected time slot is already booked. Please choose another time.")
             return redirect('edit_appointment', appointment_id=appointment_id)
 
-        # ✅ **Update appointment**
-        appointment.appointment_date = appointment_date_obj
-        appointment.appointment_time = appointment_time
-        appointment.save()
+        # ✅ Only update if the date or time has changed
+        if appointment.appointment_date != appointment_date_obj or appointment.appointment_time != appointment_time:
+            appointment.appointment_date = appointment_date_obj
+            appointment.appointment_time = appointment_time
+            appointment.save()
+            messages.success(request, "Appointment updated successfully.")
+        else:
+            messages.info(request, "No changes were made to the appointment.")
 
-        messages.success(request, "Appointment updated successfully.")
         return redirect('manage_appointments')
 
-    # ✅ **Get available time slots excluding fully booked ones**
+    # ✅ Get available time slots excluding fully booked ones
     booked_slots = set(
         Appointment.objects.filter(appointment_date=appointment.appointment_date, clinic=clinic)
         .exclude(appointment_id=appointment_id)

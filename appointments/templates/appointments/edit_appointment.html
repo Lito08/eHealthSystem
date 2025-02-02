@@ -10,12 +10,24 @@
         <form method="post">
             {% csrf_token %}
 
+            <!-- Resident (Fixed) -->
+            <div class="mb-3">
+                <label for="resident" class="form-label">Resident:</label>
+                <input type="text" class="form-control" id="resident" value="{{ appointment.resident.full_name }} ({{ appointment.resident.matric_id }})" readonly>
+            </div>
+
+            <!-- Clinic (Fixed) -->
+            <div class="mb-3">
+                <label class="form-label">Clinic:</label>
+                <input type="text" class="form-control" value="{{ appointment.clinic.name }}" readonly>
+            </div>
+
             <!-- Appointment Date -->
             <div class="mb-3">
-              <label for="appointment_date" class="form-label">Appointment Date:</label>
-              <input type="date" class="form-control" id="appointment_date" name="appointment_date"
-                     value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
-            </div>          
+                <label for="appointment_date" class="form-label">Appointment Date:</label>
+                <input type="date" class="form-control" id="appointment_date" name="appointment_date"
+                       value="{{ appointment.appointment_date|date:'Y-m-d' }}" required>
+            </div>
 
             <!-- Appointment Time -->
             <div class="mb-3">
