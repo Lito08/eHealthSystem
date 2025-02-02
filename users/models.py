@@ -73,11 +73,15 @@ class CustomUser(AbstractUser):
         """Moves an infected resident to a quarantine room."""
         quarantine_room = Room.find_available_quarantine_room()
         if quarantine_room:
-            self.original_room = self.room  # Save their original room before relocation
+            # ✅ Store original room before moving to quarantine
+            if self.room:
+                self.original_room = self.room  
+
             self.room = quarantine_room
             self.infected_status = 'infected'
             self.save()
 
+            # ✅ Assign the resident to the new room
             quarantine_room.resident = self
             quarantine_room.save()
 
@@ -85,22 +89,31 @@ class CustomUser(AbstractUser):
         else:
             messages.warning(request, "No available quarantine rooms.")
 
-    def mark_recovered(self):
-        """Moves a recovered resident back to their original room after 2 weeks."""
+    def mark_recovered(self, request):
+        """Moves a recovered resident back to their original room if available."""
         if not self.original_room:
-            return  # Prevent error if the resident has no previous room
+            messages.warning(request, f"{self.full_name} has no original room recorded.")
+            return  
 
         if self.room:
-            self.room.resident = None  # Free the quarantine room
+            # ✅ Free up the current (quarantine) room
+            self.room.resident = None
             self.room.save()
 
-        self.room = self.original_room
-        self.infected_status = 'recovered'
-        self.save()
+        # ✅ Check if the original room is occupied
+        if self.original_room.resident is None:
+            self.room = self.original_room
+            self.original_room.resident = self
+            self.original_room.save()
 
-        self.original_room.resident = self
-        self.original_room.save()
-        self.original_room = None  # Reset after relocation
+            # ✅ Reset fields
+            self.infected_status = "healthy"  # ✅ Updated to 'healthy'
+            self.original_room = None
+            self.save()
+
+            messages.success(request, f"{self.full_name} has recovered and returned to their original room.")
+        else:
+            messages.warning(request, f"{self.full_name} cannot return. Their original room is occupied.")
 
     def save(self, *args, **kwargs):
         if self.role == 'superadmin':

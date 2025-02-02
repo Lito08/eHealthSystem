@@ -70,14 +70,15 @@
         let dateField = document.getElementById("appointment_date");
         let timeField = document.getElementById("appointment_time");
 
-        let today = new Date().toISOString().split('T')[0];
-        let now = new Date();
-        let currentHours = now.getHours();
-        let currentMinutes = now.getMinutes();
-        let currentTime = (currentHours < 10 ? "0" : "") + currentHours + ":" + (currentMinutes < 10 ? "0" : "") + currentMinutes;
-
         function updateTimeSlots() {
             let selectedDate = dateField.value;
+            let now = new Date();
+            let currentHours = now.getHours();
+            let currentMinutes = now.getMinutes();
+            let currentTime = (currentHours < 10 ? "0" : "") + currentHours + ":" + 
+                              (currentMinutes < 10 ? "0" : "") + currentMinutes;
+            let today = now.toISOString().split('T')[0];
+
             let timeOptions = timeField.getElementsByTagName("option");
 
             for (let option of timeOptions) {

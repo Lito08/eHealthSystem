@@ -9,50 +9,11 @@ from django.utils.timezone import now
 
 @login_required
 def book_appointment(request):
-    if request.user.role not in ['admin', 'superadmin']:
-        messages.error(request, "You are not authorized to book appointments.")
-        return redirect('appointment_list')
-
-    clinic = Clinic.objects.first()  # Fetch the first clinic available
+    clinic = Clinic.objects.first()  # Fetch the first available clinic
 
     if not clinic:
         messages.error(request, "No clinic available. Please contact admin.")
-        return redirect('appointment_list')
-
-    current_time = now()
-    today = current_time.date()
-    two_weeks_ago = today - timedelta(days=14)
-
-    # Get residents who don't have a completed appointment in the last 14 days
-    residents_with_recent_appointments = Appointment.objects.filter(
-        status='Completed',
-        appointment_date__gte=two_weeks_ago
-    ).values_list('resident_id', flat=True)
-
-    residents_with_scheduled_appointments = Appointment.objects.filter(
-        status='Scheduled'
-    ).values_list('resident_id', flat=True)
-
-    residents = CustomUser.objects.filter(
-        role='student'
-    ).exclude(id__in=residents_with_recent_appointments).exclude(id__in=residents_with_scheduled_appointments)
-
-    # Generate available time slots dynamically (8:00 AM - 8:00 PM, every 15 mins)
-    available_time_slots = []
-    start_time = time(8, 0)
-    end_time = time(20, 0)
-    current_slot = datetime.combine(today, start_time)
-
-    while current_slot.time() < end_time:
-        # Check if this time slot is already booked
-        if not Appointment.objects.filter(
-            clinic=clinic,
-            appointment_date=today,
-            appointment_time=current_slot.time()
-        ).exists():
-            available_time_slots.append(current_slot.strftime("%H:%M"))
-
-        current_slot += timedelta(minutes=15)  # Increment time slot
+        return redirect('manage_appointments')  # ✅ Redirect to manage_appointments
 
     if request.method == 'POST':
         resident_id = request.POST.get('resident')
@@ -63,54 +24,22 @@ def book_appointment(request):
             messages.error(request, "All fields are required.")
             return redirect('book_appointment')
 
-        resident = CustomUser.objects.filter(id=resident_id, role='student').first()
-        if not resident:
-            messages.error(request, "Invalid resident selected.")
-            return redirect('book_appointment')
-
-        # Convert input values to datetime objects
-        appointment_date = datetime.strptime(appointment_date, "%Y-%m-%d").date()
-        appointment_time_obj = datetime.strptime(appointment_time, "%H:%M").time()
-
-        # Ensure appointment is in the future
-        if appointment_date < today or (appointment_date == today and appointment_time_obj <= current_time.time()):
-            messages.error(request, "You cannot book an appointment in the past. Please select a future time.")
-            return redirect('book_appointment')
-
-        # Ensure appointment time is within working hours
-        if appointment_time_obj < time(8, 0) or appointment_time_obj > time(20, 0):
-            messages.error(request, "Appointments can only be booked between 8:00 AM and 8:00 PM.")
-            return redirect('book_appointment')
-
-        # Ensure the selected time slot is available
-        if appointment_time not in available_time_slots:
-            messages.error(request, "The selected time slot is not available. Please choose another time.")
-            return redirect('book_appointment')
-
-        # Generate a unique appointment ID
-        last_appointment = Appointment.objects.order_by('-appointment_id').first()
-        last_id_number = int(last_appointment.appointment_id[4:]) if last_appointment else 0
-        appointment_id = f"APPT{last_id_number + 1:04d}"
+        resident = get_object_or_404(CustomUser, id=resident_id)
 
         # Create the appointment
         Appointment.objects.create(
-            appointment_id=appointment_id,
             resident=resident,
             clinic=clinic,
             appointment_date=appointment_date,
-            appointment_time=appointment_time_obj,
+            appointment_time=appointment_time,
             result="Pending",
         )
 
-        messages.success(request, f"Appointment booked successfully for {resident.full_name} on {appointment_date} at {appointment_time_obj}.")
-        return redirect('manage_appointments')
+        messages.success(request, f"Appointment for {resident.full_name} booked successfully.")
+        return redirect('manage_appointments')  # ✅ Redirect to `manage_appointments` to show messages
 
-    return render(request, 'appointments/book_appointment.html', {
-        'clinic': clinic,
-        'today': today,
-        'available_time_slots': available_time_slots,
-        'residents': residents
-    })
+    residents = CustomUser.objects.filter(role='student')  # Example: Filter residents
+    return render(request, 'appointments/book_appointment.html', {'clinic': clinic, 'residents': residents})
 
 @login_required
 def appointment_list(request):
@@ -296,12 +225,13 @@ def manage_appointments(request):
         messages.error(request, "You are not authorized to manage appointments.")
         return redirect('home')
 
-    all_appointments = Appointment.objects.all().order_by('-appointment_date', '-appointment_time')
+    all_appointments = Appointment.objects.all().order_by('appointment_date', 'appointment_time')
     ongoing_appointments = all_appointments.filter(status='Scheduled')
 
     return render(request, 'appointments/manage_appointments.html', {
         'all_appointments': all_appointments,
-        'ongoing_appointments': ongoing_appointments
+        'ongoing_appointments': ongoing_appointments,
+        'today': now().date()  # ✅ Pass today as context
     })
 
 @login_required
@@ -312,6 +242,7 @@ def update_appointment_result(request, appointment_id):
         return redirect('manage_appointments')
 
     appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+    previous_result = appointment.result  # Store previous result before update
 
     if request.method == 'POST':
         result = request.POST.get('result')
@@ -319,17 +250,24 @@ def update_appointment_result(request, appointment_id):
             messages.error(request, "Invalid result selection.")
             return redirect('manage_appointments')
 
-        # Update appointment result and status
         appointment.result = result
         appointment.status = 'Completed'
         appointment.save()
 
-        # If result is positive, mark resident as infected and relocate them
-        if result == 'Positive':
-            appointment.resident.mark_infected(request)  # Ensure request is passed
-            relocate_resident_to_quarantine(request, appointment.resident)  # ✅ Fix: Now passing `request`
+        resident = appointment.resident
 
-        messages.success(request, f"Appointment result updated successfully: {result}.")
+        # **From Pending/Negative → Positive: Move to Quarantine**
+        if previous_result in ['Pending', 'Negative'] and result == 'Positive':
+            if hasattr(resident, 'mark_infected'):
+                resident.mark_infected(request)  # Move to quarantine
+            else:
+                messages.warning(request, f"{resident.full_name} does not have an `infected_status` attribute.")
+
+        # **From Positive → Negative: Move Back to Original Room**
+        elif previous_result == 'Positive' and result == 'Negative':
+            relocate_back_to_original_room(request, resident)
+
+        messages.success(request, "Appointment result updated successfully.")
         return redirect('manage_appointments')
 
     return render(request, 'appointments/update_result.html', {'appointment': appointment})
@@ -403,3 +341,87 @@ def mark_recovered(request):
             messages.success(request, f"{resident.full_name} has recovered and returned to their original room.")
         else:
             messages.warning(request, f"{resident.full_name} cannot be relocated yet. Their original room is occupied.")
+
+def recover_resident_from_quarantine(request, resident):
+    """Moves a recovered resident back to their original room or assigns a new room if occupied."""
+    if resident.infected_status != "infected":
+        messages.warning(request, f"{resident.full_name} is not in quarantine.")
+        return
+
+    health_status = resident.health_status
+
+    # **If the original room is available, move them back**
+    if health_status.original_room and not health_status.original_room.is_occupied:
+        resident.room.resident = None  # Free the quarantine room
+        resident.room.save()
+
+        resident.room = health_status.original_room
+        resident.infected_status = "healthy"
+        resident.save()
+
+        health_status.original_room.resident = resident
+        health_status.original_room.save()
+        health_status.original_room = None  # Reset stored room
+        health_status.save()
+
+        messages.success(request, f"{resident.full_name} has recovered and returned to their original room.")
+
+    else:
+        # **If the original room is occupied, find an available normal room**
+        available_room = Room.find_available_normal_room()
+
+        if available_room:
+            resident.room.resident = None  # Free quarantine room
+            resident.room.save()
+
+            resident.room = available_room
+            resident.infected_status = "healthy"
+            resident.save()
+
+            available_room.resident = resident
+            available_room.save()
+
+            messages.success(request, f"{resident.full_name} has recovered but was moved to an available room.")
+        else:
+            messages.warning(request, f"{resident.full_name} has recovered but no available rooms.")
+
+def relocate_back_to_original_room(request, resident):
+    """Moves a recovered resident back to their original room safely."""
+
+    if resident.infected_status != "infected":
+        messages.warning(request, f"{resident.full_name} is not in quarantine.")
+        return
+
+    # **Ensure the resident has a health status record**
+    health_status, created = ResidentHealthStatus.objects.get_or_create(resident=resident)
+
+    if health_status.original_room:
+        original_room = health_status.original_room
+
+        # Check if the original room is available
+        if original_room.resident is None:
+            # Free the quarantine room
+            if resident.room:
+                resident.room.resident = None
+                resident.room.save()
+
+            # Move resident back to their original room
+            resident.room = original_room
+            resident.infected_status = "healthy"
+            resident.save()
+
+            original_room.resident = resident
+            original_room.save()
+
+            # Reset the stored original room data
+            health_status.original_room = None
+            health_status.infected_since = None
+            health_status.save()
+
+            messages.success(request, f"{resident.full_name} has recovered and returned to their original room.")
+        else:
+            messages.warning(request, f"{resident.full_name}'s original room is occupied! Manual admin intervention is required.")
+    else:
+        messages.warning(request, f"{resident.full_name} has no original room on record.")
+
+

@@ -4,7 +4,16 @@
 {% block content %}
 <h2 class="text-center">Manage Appointments</h2>
 
-<!-- Book Appointment Button -->
+<!-- ✅ Success/Error Messages -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- ✅ Book Appointment Button -->
 <div class="text-end mb-3">
     <a href="{% url 'book_appointment' %}" class="btn btn-success">
         <i class="fas fa-calendar-plus"></i> Book New Appointment
@@ -56,7 +65,7 @@
                             <a href="{% url 'cancel_appointment' appointment.appointment_id %}" class="btn btn-danger btn-sm"
                                 onclick="return confirm('Are you sure you want to cancel this appointment?');">Cancel</a>
                         {% endif %}
-                        {% if appointment.status in 'Scheduled Completed' %}
+                        {% if appointment.status == 'Scheduled' or appointment.status == 'Completed' %}
                             <a href="{% url 'update_appointment_result' appointment.appointment_id %}" class="btn btn-primary btn-sm">Update Result</a>
                         {% endif %}
                     </td>
