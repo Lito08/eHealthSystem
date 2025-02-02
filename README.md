@@ -81,6 +81,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+Still error?
+Try Install Visual Studio with C++ Build Tools.
+During installation, make sure to select the Desktop development with C++ workload. This includes the necessary compilers and libraries for building extensions like dlib.
+
 ---
 
 🏢 ## Database Setup
