@@ -161,8 +161,11 @@ def report_health(request):
         messages.error(request, "No clinic available for appointments. Please contact admin.")
         return redirect('home')
 
-    # ✅ Get correct timezone-aware local date
-    today = localtime(now()).date()
+    # ✅ Get correct timezone-aware local date and time
+    local_now = localtime(now())
+    today = local_now.date()
+    current_time = local_now.time()
+
     fourteen_days_ago = today - timedelta(days=14)
 
     # ✅ Check for ongoing (scheduled) appointments
@@ -178,7 +181,7 @@ def report_health(request):
         appointment_date__gte=fourteen_days_ago
     ).order_by('-appointment_date').first()
 
-    # ✅ Prevent new health report submission if a **scheduled** appointment already exists
+    # ✅ Prevent booking if a **scheduled** appointment already exists
     if ongoing_appointment:
         return render(request, 'appointments/report_health.html', {
             'ongoing_appointment': ongoing_appointment,
@@ -186,7 +189,7 @@ def report_health(request):
             'last_completed_appointment': None
         })
 
-    # ✅ Prevent booking a new appointment if a **completed** one exists within 14 days
+    # ✅ Prevent booking if a **completed** appointment exists in the last 14 days
     if last_completed_appointment:
         return render(request, 'appointments/report_health.html', {
             'ongoing_appointment': None,
@@ -201,31 +204,41 @@ def report_health(request):
             messages.success(request, "You are safe! Stay healthy!")
             return redirect('home')
 
-        # ✅ Get next available slot for today
-        available_time_slots = get_available_time_slots(today)
+        # ✅ **Determine the correct starting date for booking**
+        appointment_date = today if current_time < time(20, 0) else today + timedelta(days=1)
 
-        if not available_time_slots:
-            messages.error(request, "No available time slots today. Please try tomorrow.")
-            return redirect('appointment_list')
+        # ✅ **Find the next available date with an open slot**
+        while True:
+            available_time_slots = get_available_time_slots(appointment_date)
 
-        appointment_time = available_time_slots[0]  # ✅ Pick the first available slot
+            if available_time_slots:
+                for slot in available_time_slots:
+                    # ✅ Double-check if slot is **still available**
+                    if not Appointment.objects.filter(
+                        appointment_date=appointment_date,
+                        appointment_time=slot,
+                        clinic=clinic
+                    ).exists():
+                        appointment_time = slot
+                        break  # ✅ Stop searching once a free slot is found
 
-        # ✅ Ensure the slot is actually available before booking
-        if Appointment.objects.filter(appointment_date=today, appointment_time=appointment_time, clinic=clinic).exists():
-            messages.error(request, "This time slot is no longer available. Please try another time.")
-            return redirect('appointment_list')
+                if appointment_time:
+                    break  # ✅ Stop looping if we found a valid date & time slot
 
-        # ✅ Create an appointment
+            # ✅ No slots available, check the next day
+            appointment_date += timedelta(days=1)
+
+        # ✅ **Create the appointment**
         Appointment.objects.create(
             resident=request.user,
             clinic=clinic,
-            appointment_date=today,
+            appointment_date=appointment_date,
             appointment_time=appointment_time,
             result="Pending",
             status="Scheduled",
         )
 
-        messages.success(request, f"An appointment has been booked for {today} at {appointment_time}.")
+        messages.success(request, f"An appointment has been booked for {appointment_date} at {appointment_time}.")
         return redirect('appointment_list')
 
     return render(request, 'appointments/report_health.html', {
