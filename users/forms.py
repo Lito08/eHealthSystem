@@ -60,7 +60,6 @@ class UserRegistrationForm(UserCreationForm):
         else:
             self.fields["full_name"].required = True
 
-
 class UserUpdateForm(forms.ModelForm):
     role = forms.CharField(
         required=False,
